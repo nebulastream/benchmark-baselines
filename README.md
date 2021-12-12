@@ -20,4 +20,8 @@ This repository, contains reference implementation of different stream processin
 
 ### Hardware:
 
-Node-55
+Node-55 - Intel
+Fatnode - AMD Rayzen
+Cloud 48 - ARM
+RaspeeryPi 2 ARM
+
