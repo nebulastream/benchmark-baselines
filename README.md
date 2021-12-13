@@ -16,7 +16,7 @@ This repository, contains reference implementation of different stream processin
 | Nextmark Q8  | :heavy_check_mark:  | | | | | | |
 | Nextmark Q11  | :heavy_check_mark:  | | | | | | |
 | ClusterMonitoring (LS)  | :heavy_check_mark:  | | | | | | |
-| SmartGrid (LS)  |  :heavy_check_mark: | | | | | | |
+| SmartGrid (LS)  |   | | | | | | |
 | LinearRoadBenchmark (LS)  |   | | | | | | |
 
 ### Hardware:
