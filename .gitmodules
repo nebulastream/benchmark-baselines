@@ -1,0 +1,3 @@
+[submodule "nexmark-ysb-flink"]
+	path = nexmark-ysb-flink
+	url = git@github.com:VenturaDelMonte/nexmark-vanilla-flink.git
