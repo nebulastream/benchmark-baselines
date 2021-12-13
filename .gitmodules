@@ -1,3 +1,6 @@
 [submodule "nexmark-ysb-flink"]
 	path = nexmark-ysb-flink
 	url = git@github.com:VenturaDelMonte/nexmark-vanilla-flink.git
+[submodule "ysb-flink-spark"]
+	path = ysb-flink-spark
+	url = git@github.com:VenturaDelMonte/analyzing-streaming-mhw.git
