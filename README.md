@@ -9,13 +9,14 @@ This repository, contains reference implementation of different stream processin
 
 | Queries  | Flink | Spark Structured Streaming | Kafka Streams | RedPander | Timly Dataflow | Light Saber | Google Dataflow | Microsoft Stream Insighes / Trill | 
 | ------------- | ------------- |------------- |------------- |------------- |------------- |------------- |------------- |------------- |
-| YSB  |   | | | | | | |
-| Nextmark Q4  |   | | | | | | |
-| Nextmark Q5  |   | | | | | | |
-| Nextmark Q7  |   | | | | | | |
-| Nextmark Q8  |   | | | | | | |
-| ClusterMonitoring (LS)  |   | | | | | | |
-| SmartGrid (LS)  |   | | | | | | |
+| YSB  | :heavy_check_mark: | | | | | | |
+| Nextmark Q4  |  :heavy_check_mark: | | | | | | |
+| Nextmark Q5  | :heavy_check_mark:  | | | | | | |
+| Nextmark Q7  | :heavy_check_mark:  | | | | | | |
+| Nextmark Q8  | :heavy_check_mark:  | | | | | | |
+| Nextmark Q11  | :heavy_check_mark:  | | | | | | |
+| ClusterMonitoring (LS)  | :heavy_check_mark:  | | | | | | |
+| SmartGrid (LS)  |  :heavy_check_mark: | | | | | | |
 | LinearRoadBenchmark (LS)  |   | | | | | | |
 
 ### Hardware:
