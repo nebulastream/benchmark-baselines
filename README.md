@@ -7,7 +7,7 @@ This repository, contains reference implementation of different stream processin
 :heavy_check_mark: done
 :x: not possible
 
-| Queries  | Flink | Spark Structured Streaming | Kafka Streams | RedPander | Timly Dataflow | Light Saber | Google Dataflow | Microsoft Stream Insighes / Trill | 
+| Queries  | Flink | Spark Structured Streaming | Kafka Streams | RedPanda | Timly Dataflow | Light Saber | Google Dataflow | Microsoft Stream Insighes / Trill | 
 | ------------- | ------------- |------------- |------------- |------------- |------------- |------------- |------------- |------------- |
 | YSB  | :heavy_check_mark: | | | | | | |
 | Nextmark Q4  |  :heavy_check_mark: | | | | | | |
