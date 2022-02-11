@@ -20,6 +20,7 @@ public class YSBSerde implements Serde<YSBRecord> {
 
     private static long numReceivedBuffers = 0;
     private static long startMS;
+    private static long countOfLogs = 0;
 
     static public List<YSBRecord> deserializeYSBBuffer(byte[] arr) {
         assert (arr.length == 8192); // todo assert not working
@@ -37,19 +38,26 @@ public class YSBSerde implements Serde<YSBRecord> {
 
         // here we record the (ingested) throughput
         // we might want to move this to another class, but here is a convenient place to count buffers for now.
-        numReceivedBuffers++;
-        if (numReceivedBuffers == 1) {
-            // start benchmark timing
+        long log_every = 8_192 * 8;
+        if (numReceivedBuffers % log_every == 0) {
+            if (startMS != 0) {
+                long diff = (System.currentTimeMillis() - startMS);
+                long throughputMBperSec = numReceivedBuffers * ITEMS_PER_BUFFER * YSBRecord.getIngestionSize()
+                        / (1024*1024)           // divided by MB
+                        / (diff / 1000);        // divided by time in S
+                long throughputTupKperSec = numReceivedBuffers * ITEMS_PER_BUFFER / diff;
+                logger.info("Log #{}: Last {} buffers ingested within {}s. Avg throughput: {}k tuples/s = {}MB/s",
+                        countOfLogs,
+                        numReceivedBuffers,
+                        diff / 1000,
+                        throughputTupKperSec,
+                        throughputMBperSec);
+            }
             startMS = System.currentTimeMillis();
-            String timeOfDay = new SimpleDateFormat("hh:mm:ss").format(new Date(startMS));
-            logger.info("Starting benchmark. First buffer received at: {}", timeOfDay);
-        } else if (numReceivedBuffers % 128 == 0){
-            long diff = (System.currentTimeMillis() - startMS);
-            logger.info("{} buffers ingested after {}s. Avg throughput: {}k tuples/s",
-                    numReceivedBuffers,
-                    diff / 1000,
-                    numReceivedBuffers * ITEMS_PER_BUFFER / diff);
+            numReceivedBuffers = 0;
+            countOfLogs++;
         }
+        numReceivedBuffers++;
 
         for (int i = 0; i < itemsInThisBuffer; i++) {
             long user_id = buffer.getLong();

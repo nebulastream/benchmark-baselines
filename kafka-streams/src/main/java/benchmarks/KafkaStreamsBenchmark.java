@@ -226,7 +226,7 @@ public class KafkaStreamsBenchmark {
 
                 Runtime.getRuntime().addShutdownHook(new Thread(kafkaStreams::close));
 
-                logger.info("Benchmarks Started");
+                logger.info("Kafka Streams Benchmarks Started");
                 runKafkaStreams(kafkaStreams);
             }
         }
