@@ -45,10 +45,10 @@ public class YSBSerde implements Serde<YSBRecord> {
         if (numReceivedBuffers % log_every == 0) {
             if (startMS != 0) {
                 long diff = (System.currentTimeMillis() - startMS);
-                long throughputMBperSec = numReceivedBuffers * ITEMS_PER_BUFFER * YSBRecord.getIngestionSize()
-                        / (1024*1024)           // divided by MB
-                        / (diff / 1000);        // divided by time in S
-                long throughputTupKperSec = numReceivedBuffers * ITEMS_PER_BUFFER / diff;
+                long throughputTupKperSec = numReceivedBuffers * ITEMS_PER_BUFFER / diff; // 1000 tup per sec
+                long throughputMBperSec = throughputTupKperSec * 1000           // now in tup per sec
+                                            * YSBRecord.getIngestionSize()      // now in bytes per sec
+                                            / (1024*1024);                      // now in MB per sec
                 logger.info("Log #{}: Last {} buffers ingested within {}s. Avg throughput: {}k tuples/s = {}MB/s",
                         countOfLogs,
                         numReceivedBuffers,
