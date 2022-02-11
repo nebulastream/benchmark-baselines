@@ -30,9 +30,12 @@ public class YSBSerde implements Serde<YSBRecord> {
         int itemsInThisBuffer = buffer.getInt();
         long newBacklog = buffer.getLong();
 
-        assert (checksum == 0xdeedf000);
-        assert (((8192 - 16) / YSBRecord.getIngestionSize()) >= itemsInThisBuffer);
-        assert (itemsInThisBuffer == ITEMS_PER_BUFFER);
+        if (checksum != 0xdeedf000
+            || ((8192 - 16) / YSBRecord.getIngestionSize()) < itemsInThisBuffer
+            || itemsInThisBuffer != ITEMS_PER_BUFFER) {
+            logger.error("Invalid buffer! checksum: {} itemsInThisBuffer: {}", checksum, itemsInThisBuffer);
+            assert (false); // todo not working
+        }
 
         List<YSBRecord> result = new LinkedList<>();
 
