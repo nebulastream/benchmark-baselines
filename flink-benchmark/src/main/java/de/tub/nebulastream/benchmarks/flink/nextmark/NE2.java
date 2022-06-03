@@ -4,13 +4,16 @@ import de.tub.nebulastream.benchmarks.flink.manufacturingequipment.MESource;
 import de.tub.nebulastream.benchmarks.flink.utils.ThroughputLogger;
 import de.tub.nebulastream.benchmarks.flink.ysb.YSB;
 import org.apache.flink.api.common.functions.FilterFunction;
+import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,10 +55,15 @@ public class NE2 {
                     public boolean filter(NEBidRecord value) throws Exception {
                         return value.auctionId == 1007 || value.auctionId == 1020 || value.auctionId == 2001 || value.auctionId == 2019 || value.auctionId == 2087;
                     }
-                }).project(0, 2)
-                .addSink(new SinkFunction<Tuple>() {
+                }).flatMap(new FlatMapFunction<NEBidRecord, Tuple2<Long, Double>>() {
                     @Override
-                    public void invoke(Tuple value, Context context) throws Exception {
+                    public void flatMap(NEBidRecord value, Collector<Tuple2<Long, Double>> out) throws Exception {
+                        out.collect(new Tuple2<>(value.auctionId, value.price));
+                    }
+                })
+                .addSink(new SinkFunction<Tuple2<Long, Double>>() {
+                    @Override
+                    public void invoke(Tuple2<Long, Double> value) throws Exception {
 
                     }
                 });
