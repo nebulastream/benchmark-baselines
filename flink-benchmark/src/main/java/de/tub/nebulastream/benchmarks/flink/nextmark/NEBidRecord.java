@@ -6,8 +6,8 @@ public class NEBidRecord {
     public long bidderId;
     public double price;
 
-    public NEBidRecord() {
-    }
+    public NEBidRecord() {}
+
 
     public NEBidRecord(long timestamp, long auctionId, long bidderId, double price) {
         this.timestamp = timestamp;
