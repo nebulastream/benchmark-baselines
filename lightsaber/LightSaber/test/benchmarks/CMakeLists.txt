@@ -1,0 +1,6 @@
+include_directories(applications)
+
+add_subdirectory(applications)
+add_subdirectory(microbenchmarks)
+add_subdirectory(applicationsWithCheckpoints)
+add_subdirectory(kafka-flink)
