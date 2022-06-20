@@ -40,7 +40,7 @@ public class LR1 {
         DataStreamSource<LRRecord> source = env.addSource(new LRSource(runtime, numOfRecords))
                 .setParallelism(parallelism);
 
-        source.flatMap(new ThroughputLogger<LRRecord>(LRSource.RECORD_SIZE_IN_BYTE, 10_000));
+        source.flatMap(new ThroughputLogger<LRRecord>(LRSource.RECORD_SIZE_IN_BYTE, 1000));
 
         source
                 .map(value -> {

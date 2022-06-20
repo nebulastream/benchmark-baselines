@@ -29,14 +29,14 @@ public class YSB {
         final int numOfRecords = params.getInt("numOfRecords", 100_000);
         final int runtime = params.getInt("runtime", 10);
         final int queries = params.getInt("queries", 1);
-        final boolean sourceSharing = params.getBoolean("sourceSharing", true);
+        final boolean sourceSharing = params.getBoolean("sourceSharing", false);
 
         LOG.info("Arguments: {}", params);
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         //StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
 
-        env.setParallelism(parallelism);
+        env.setParallelism(16);
         env.getConfig().enableObjectReuse();
         env.setMaxParallelism(maxParallelism);
         env.getConfig().setLatencyTrackingInterval(latencyTrackingInterval);
@@ -74,7 +74,7 @@ public class YSB {
                 DataStreamSource<YSBRecord> source = env.addSource(new YSBSource(runtime, numOfRecords))
                         .setParallelism(parallelism);
 
-                source.flatMap(new ThroughputLogger<YSBRecord>(YSBSource.RECORD_SIZE_IN_BYTE, 1_000_000));
+                source.flatMap(new ThroughputLogger<YSBRecord>(YSBSource.RECORD_SIZE_IN_BYTE, 1_000, i));
 
                 source.flatMap(new Filter())
                         .keyBy((KeySelector<YSBRecord.YSBFinalRecord, Long>) r -> r.campaign_id)

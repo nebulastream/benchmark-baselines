@@ -15,10 +15,17 @@ public class ThroughputLogger<T> extends RichFlatMapFunction<T, Integer> {
     private long lastLogTimeMs = -1;
     private int elementSize;
     private long logfreq;
+    private long query = 0;
 
     public ThroughputLogger(int elementSize, long logfreq) {
         this.elementSize = elementSize;
         this.logfreq = logfreq;
+    }
+
+    public ThroughputLogger(int elementSize, long logfreq, long query) {
+        this.elementSize = elementSize;
+        this.logfreq = logfreq;
+        this.query = query;
     }
 
     @Override
@@ -37,8 +44,8 @@ public class ThroughputLogger<T> extends RichFlatMapFunction<T, Integer> {
                 long elementDiff = totalReceived - lastTotalReceived;
                 double ex = (1000 / (double) timeDiff);
 
-                LOG.info("Worker: {} During the last {} ms, we received {} elements. That's {} elements/second/core. {} MB/sec/core. GB received {}", getRuntimeContext().getIndexOfThisSubtask(),
-                        timeDiff, elementDiff, elementDiff * ex, elementDiff * ex * elementSize / 1024 / 1024, (totalReceived * elementSize) / 1024 / 1024 / 1024);
+                LOG.info("Worker: {} During the last {} ms, we received {} elements. That's {} elements/second/core. {} MB/sec/core. GB received {}. Query {}", getRuntimeContext().getIndexOfThisSubtask(),
+                        timeDiff, elementDiff, elementDiff * ex, elementDiff * ex * elementSize / 1024 / 1024, (totalReceived * elementSize) / 1024 / 1024 / 1024, query);
                 // reinit
                 lastLogTimeMs = now;
                 lastTotalReceived = totalReceived;
