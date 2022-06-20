@@ -12,5 +12,5 @@ rm -rf /flink-1.15.0/log/*
 
 java -cp ./target/yahoo-bench-flink_2.11-0.1-SNAPSHOT.jar de.tub.nebulastream.benchmarks.flink.utils.AnalyzeTool \
 "./flink-1.15.0/log/flink-zeuchste-ldap -taskexecutor-0-sr630-wn-a-55.log" \
-lr2 \
+linearroadbenchmark2 \
 "$1"
