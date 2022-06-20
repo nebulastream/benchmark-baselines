@@ -40,7 +40,7 @@ public class SG1 {
         DataStreamSource<SGRecord> source = env.addSource(new SGSource(runtime, numOfRecords))
                 .setParallelism(parallelism);
 
-        source.flatMap(new ThroughputLogger<SGRecord>(SGSource.RECORD_SIZE_IN_BYTE, 10_000));
+        source.flatMap(new ThroughputLogger<SGRecord>(SGSource.RECORD_SIZE_IN_BYTE, 1_000));
 
         source
 

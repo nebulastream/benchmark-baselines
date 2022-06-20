@@ -28,7 +28,7 @@ public class ME1 {
         final long latencyTrackingInterval = params.getLong("latencyTrackingInterval", 0);
         final int parallelism = params.getInt("parallelism", 1);
         final int maxParallelism = params.getInt("maxParallelism", 16);
-        final int numOfRecords = params.getInt("numOfRecords", 100_000);
+        final int numOfRecords = params.getInt("numOfRecords", 500_000);
         final int runtime = params.getInt("runtime", 10);
 
         LOG.info("Arguments: {}", params);
@@ -44,7 +44,7 @@ public class ME1 {
         DataStreamSource<MERecord> source = env.addSource(new MESource(runtime, numOfRecords))
                 .setParallelism(parallelism);
 
-        source.flatMap(new ThroughputLogger<MERecord>(MESource.RECORD_SIZE_IN_BYTE, 10_000));
+        source.flatMap(new ThroughputLogger<MERecord>(MESource.RECORD_SIZE_IN_BYTE, 100_000));
 
         AllWindowedStream<MERecord, TimeWindow> windowedStream = source
                 .windowAll(SlidingProcessingTimeWindows.of(Time.seconds(60), Time.seconds(1)));

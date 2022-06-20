@@ -42,7 +42,7 @@ public class SG2 {
         DataStreamSource<SGRecord> source = env.addSource(new SGSource(runtime, numOfRecords))
                 .setParallelism(parallelism);
 
-        source.flatMap(new ThroughputLogger<SGRecord>(SGSource.RECORD_SIZE_IN_BYTE, 10000));
+        source.flatMap(new ThroughputLogger<SGRecord>(SGSource.RECORD_SIZE_IN_BYTE, 500));
 
         source
                 .keyBy(new KeySelector<SGRecord, Tuple3<Short, Short, Short>>() {
@@ -73,7 +73,7 @@ public class SG2 {
                         return new Tuple2<>(a.f0 + b.f0, a.f1 + b.f1);
                     }
                 })
-                .setMaxParallelism(maxParallelism)
+                .setParallelism(maxParallelism)
                 .name("WindowOperator")
                 .addSink(new SinkFunction<Double>() {
                     @Override
