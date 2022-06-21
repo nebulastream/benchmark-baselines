@@ -240,6 +240,7 @@ class OperatorKernel : public OperatorCode, public AggregateOperatorCode {
       auto path = SystemConf::getInstance().FILE_ROOT_PATH + "/scabbard";
       std::ofstream out(path + "/GeneratedCode_" + std::to_string(m_id) + ".cpp");
       out << s;
+      std::cout << "generated code=" << s.c_str() << std::endl;
       out.close();
     }
     if (m_genCode) {
@@ -319,6 +320,7 @@ class OperatorKernel : public OperatorCode, public AggregateOperatorCode {
         //auto path = Utils::getCurrentWorkingDir();
         auto path = SystemConf::getInstance().FILE_ROOT_PATH + "/scabbard";
         std::ofstream out(path + "/GeneratedCode_" + std::to_string(m_id) + ".cpp");
+        std::cout << "generated code=" << s.c_str() << std::endl;
         out << s;
         out.close();
       }

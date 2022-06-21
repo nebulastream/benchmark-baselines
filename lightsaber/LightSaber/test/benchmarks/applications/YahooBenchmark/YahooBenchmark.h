@@ -51,7 +51,7 @@ class YahooBenchmark : public BenchmarkQuery {
     long padding_0;
     __uint128_t user_id;
     __uint128_t page_id;
-    __uint128_t ad_id;
+    __uint128_t ad_id;//campaing
     long ad_type;
     long event_type;
     __uint128_t ip_address;
@@ -179,6 +179,7 @@ class YahooBenchmark : public BenchmarkQuery {
       }
       staticBuf[i * 2] = i;
       staticBuf[i * 2 + 1] = (__uint128_t) campaign_id;
+//      std::cout << "add campaign_id=" << campaign_id << " at pos = " << i * 2 + 1 << std::endl;
     }
 
     std::string line;
@@ -186,7 +187,8 @@ class YahooBenchmark : public BenchmarkQuery {
     auto page_id = distr(eng);
     unsigned long idx = 0;
     while (idx < len / sizeof(InputSchema_128)) {
-      auto ad_id = staticBuf[((idx % 100000) % adsNum) * 2];
+//      auto ad_id = staticBuf[((idx % 100000) % adsNum) * 2];
+      auto ad_id = rand() % campaignNum;
       auto ad_type = (idx % 100000) % 5;
       auto event_type = (idx % 100000) % 3;
       line = std::to_string(idx / 1000) + " " + std::to_string(user_id) + " " + std::to_string(page_id) + " " +
@@ -200,14 +202,14 @@ class YahooBenchmark : public BenchmarkQuery {
       idx++;
     }
 
-    if (m_debug) {
-      std::cout << "timestamp user_id page_id ad_id ad_type event_type ip_address" << std::endl;
-      for (unsigned long i = 0; i < m_data->size() / sizeof(InputSchema_128); ++i) {
-        printf("[DBG] %09d: %7d %13ld %8ld %13ld %3ld %6ld %2ld \n",
-               i, buf[i].timestamp, (long) buf[i].user_id, (long) buf[i].page_id, (long) buf[i].ad_id,
-               buf[i].ad_type, buf[i].event_type, (long) buf[i].ip_address);
-      }
-    }
+//    if (m_debug) {
+//      std::cout << "timestamp user_id page_id ad_id ad_type event_type ip_address" << std::endl;
+//      for (unsigned long i = 0; i < m_data->size() / sizeof(InputSchema_128); ++i) {
+//        printf("[DBG] %09d: %7d %13ld %8ld %13ld %3ld %6ld %2ld \n",
+//               i, buf[i].timestamp, (long) buf[i].user_id, (long) buf[i].page_id, (long) buf[i].ad_id,
+//               buf[i].ad_type, buf[i].event_type, (long) buf[i].ip_address);
+//      }
+//    }
   };
 
   std::vector<char> *getInMemoryData() override {
