@@ -40,7 +40,7 @@ public class YSBSource extends RichParallelSourceFunction<YSBRecord> {
         for (int i = 0; i < numOfRecords; i++) {
             mbuff.putLong(1);
             mbuff.putLong(0);
-            int campaign_id = ThreadLocalRandom.current().nextInt(0, 1000 + 1);
+            int campaign_id = ThreadLocalRandom.current().nextInt(0, 10000 + 1);
             mbuff.putLong(campaign_id);
             int event_type = ThreadLocalRandom.current().nextInt(0, 3);
             mbuff.putLong(event_type);
