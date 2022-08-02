@@ -1,7 +1,8 @@
 #include <iostream>
+#include <ostream>
+
 #include "YSB.cpp"
 #include "YSB2.cpp"
-#include  <ostream>
 // ./yahoo_benchmark_checkpoints --circular-size 16777216 --slots 128
 // --batch-size 524288 --bundle-size 524288 --checkpoint-duration 1000 --threads
 // 1
@@ -15,7 +16,10 @@ int main(int argc, const char **argv) {
     std::cout << "run YSB 1" << std::endl;
     benchmarkQuery = std::make_unique<YSB>();
   } else if (SystemConf::getInstance().QUERY_NUM == 2) {
-    std::cout << "run YSB 2" << std::endl;
+    std::cout << "run YSB 2"
+              << " use campaing=" << SystemConf::getInstance().CAMPAIGNS_NUM
+              << " and hash size " << SystemConf::getInstance().HASH_TABLE_SIZE
+              << std::endl;
 
     benchmarkQuery = std::make_unique<YSB2>();
   } else {
