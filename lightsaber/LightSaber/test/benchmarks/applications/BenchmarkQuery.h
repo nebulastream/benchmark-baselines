@@ -172,7 +172,10 @@ class BenchmarkQuery {
       m_prevThrTime = time_span.count();
       m_thrTime = time_span.count();
     }
-    std::cout << "Start running " + getApplicationName() + " ..." << std::endl;
+    std::cout << "Start running " + getApplicationName() + " ..."
+              << " use campaing=" << SystemConf::getInstance().CAMPAIGNS_NUM
+              << " and hash size " << SystemConf::getInstance().HASH_TABLE_SIZE
+                                      << std::endl;
     try {
       while (true) {
         if (terminate || SystemConf::getInstance().MBs_INGESTED_PER_SEC > 0) {
@@ -274,7 +277,10 @@ class BenchmarkQuery {
       SystemConf::getInstance().DURATION = m_duration - 5;
     }
     long systemTimestamp = -1;
-    std::cout << "Start running " + getApplicationName() + " ..." << std::endl;
+    std::cout << "Start running " + getApplicationName() + " ..."
+              << " use campaing=" << SystemConf::getInstance().CAMPAIGNS_NUM
+              << " and hash size " << SystemConf::getInstance().HASH_TABLE_SIZE
+    << std::endl;
 
     /*struct iSchema {
       long timestamp;
