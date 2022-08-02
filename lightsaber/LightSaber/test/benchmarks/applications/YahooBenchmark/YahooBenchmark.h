@@ -86,11 +86,11 @@ class YahooBenchmark : public BenchmarkQuery {
 
   virtual void createApplication() = 0;
 
-  void loadInMemoryData(uint32_t campaignNum = 100) {
+  void loadInMemoryData() {
     if (m_is64)
       loadInMemoryData_64();
     else
-      loadInMemoryData_128(campaignNum);
+      loadInMemoryData_128();
   };
 
   void loadInMemoryData_64() {
@@ -150,12 +150,14 @@ class YahooBenchmark : public BenchmarkQuery {
     }
   };
 
-  void loadInMemoryData_128(uint32_t campaignNum) {
+  void loadInMemoryData_128() {
     std::random_device rd;
     std::mt19937_64 eng(rd());
     std::uniform_int_distribution<long> distr(0, 1000000);
 
     std::unordered_set<long> set;
+    size_t campaignNum = SystemConf::getInstance().CAMPAIGNS_NUM;
+    std::cout << "USE campaignNum=" << campaignNum << std::endl;
 
     auto adsNum = campaignNum * 10;
     assert(adsNum <= 100000);

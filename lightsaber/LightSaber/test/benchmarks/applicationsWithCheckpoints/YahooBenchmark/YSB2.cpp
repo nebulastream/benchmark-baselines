@@ -156,12 +156,12 @@ class YSB2 : public YahooBenchmark {
 
  public:
   YSB2(bool inMemory = true) {
-    SystemConf::getInstance().CAMPAIGNS_NUM = 10000;
+//    SystemConf::getInstance().CAMPAIGNS_NUM = 100;
     SystemConf::getInstance().HASH_TABLE_SIZE =
         pow(2, ceil(log(SystemConf::getInstance().CAMPAIGNS_NUM) / log(2)));
     m_name = "YSB2";
     createSchema();
-    if (inMemory) loadInMemoryData(SystemConf::getInstance().CAMPAIGNS_NUM);
+    if (inMemory) loadInMemoryData();
     createApplication();
   }
 };
