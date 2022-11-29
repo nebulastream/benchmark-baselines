@@ -45,173 +45,201 @@ import java.util.UUID;
 
 public class YSB {
 
-	private static final Logger LOG = LoggerFactory.getLogger(YSB.class);
+    private static final Logger LOG = LoggerFactory.getLogger(YSB.class);
 
-	public static void main(String[] args) throws Exception {
-		ParameterTool params = ParameterTool.fromArgs(args);
-		final int sourceParallelism = params.getInt("sourceParallelism", 1);
-		final long latencyTrackingInterval = params.getLong("latencyTrackingInterval", 0);
-		final int parallelism = params.getInt("parallelism", 1);
-		final int maxParallelism = params.getInt("maxParallelism", 16);
-		final int numOfRecords = params.getInt("numOfRecords", 1_000_000);
-		final int runtime = params.getInt("runtime", 10);
-		final boolean useKafka = params.has("useKafka");
-		final String kafkaServers = params.get("kafkaServers", "34.107.58.147:9092");
-		LOG.info("Arguments: {}", params);
+    public static void main(String[] args) throws Exception {
+        ParameterTool params = ParameterTool.fromArgs(args);
+        final int sourceParallelism = params.getInt("sourceParallelism", 1);
+        final long latencyTrackingInterval = params.getLong("latencyTrackingInterval", 0);
+        final int parallelism = params.getInt("parallelism", 1);
+        final int maxParallelism = params.getInt("maxParallelism", 16);
+        final int numOfRecords = params.getInt("numOfRecords", 1_000_000);
+        final int runtime = params.getInt("runtime", 10);
+        final boolean useKafka = params.has("useKafka");
+        final String kafkaServers = params.get("kafkaServers", "34.107.58.147:9092");
+        LOG.info("Arguments: {}", params);
 
-		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		env.setParallelism(parallelism);
-		env.getConfig().enableObjectReuse();
-		env.setMaxParallelism(maxParallelism);
-		env.getConfig().setLatencyTrackingInterval(latencyTrackingInterval);
+        env.setParallelism(parallelism);
+        env.getConfig().enableObjectReuse();
+        env.setMaxParallelism(maxParallelism);
+        env.getConfig().setLatencyTrackingInterval(latencyTrackingInterval);
 
-		env.getConfig().enableForceKryo();
-		env.getConfig().registerTypeWithKryoSerializer(YSBRecord.class, YSBRecord.YSBRecordSerializer.class);
-		env.getConfig().registerTypeWithKryoSerializer(YSBRecord.YSBFinalRecord.class, YSBRecord.YSBFinalRecordSerializer.class);
-		env.getConfig().addDefaultKryoSerializer(YSBRecord.class, YSBRecord.YSBRecordSerializer.class);
-		env.getConfig().addDefaultKryoSerializer(YSBRecord.YSBFinalRecord.class, YSBRecord.YSBFinalRecordSerializer.class);
-		env.getConfig().registerKryoType(YSBRecord.class);
-		env.getConfig().registerKryoType(YSBRecord.YSBFinalRecord.class);
+        env.getConfig().enableForceKryo();
+        env.getConfig().registerTypeWithKryoSerializer(YSBRecord.class, YSBRecord.YSBRecordSerializer.class);
+        env.getConfig().registerTypeWithKryoSerializer(YSBRecord.YSBFinalRecord.class, YSBRecord.YSBFinalRecordSerializer.class);
+        env.getConfig().addDefaultKryoSerializer(YSBRecord.class, YSBRecord.YSBRecordSerializer.class);
+        env.getConfig().addDefaultKryoSerializer(YSBRecord.YSBFinalRecord.class, YSBRecord.YSBFinalRecordSerializer.class);
+        env.getConfig().registerKryoType(YSBRecord.class);
+        env.getConfig().registerKryoType(YSBRecord.YSBFinalRecord.class);
 
-		DataStream<YSBRecord> source = null;
-		if (true) {
+        DataStream<YSBRecord> source = null;
+        if (true) {
 
-			Properties baseCfg = new Properties();
+            Properties baseCfg = new Properties();
 
-			baseCfg.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServers);
-			baseCfg.setProperty(ConsumerConfig.RECEIVE_BUFFER_CONFIG, "" + (4 * 1024 * 1024));
-			baseCfg.setProperty(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, "32768");
-			baseCfg.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "im-job");
-			baseCfg.setProperty("offsets.commit.timeout.ms", "" + (3 * 60 * 1000));
-			baseCfg.setProperty(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "" + (10 * 1024 * 1024));
-			baseCfg.setProperty(ConsumerConfig.CHECK_CRCS_CONFIG, "false");
+            baseCfg.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServers);
+            baseCfg.setProperty(ConsumerConfig.RECEIVE_BUFFER_CONFIG, "" + (4 * 1024 * 1024));
+            baseCfg.setProperty(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, "32768");
+            baseCfg.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "im-job");
+            baseCfg.setProperty("offsets.commit.timeout.ms", "" + (3 * 60 * 1000));
+            baseCfg.setProperty(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "" + (10 * 1024 * 1024));
+            baseCfg.setProperty(ConsumerConfig.CHECK_CRCS_CONFIG, "false");
 //
-			KafkaSource<YSBRecord[]> kafkaSource = KafkaSource.<YSBRecord[]>builder()
-					.setBootstrapServers(kafkaServers)
-					.setTopics("nesKafka")
-					.setGroupId("flink")
-					.setStartingOffsets(OffsetsInitializer.earliest())
-					.setValueOnlyDeserializer(new DeserializationSchema<YSBRecord[]>() {
+            KafkaSource<YSBRecord[]> kafkaSource = KafkaSource.<YSBRecord[]>builder()
+                    .setBootstrapServers(kafkaServers)
+                    .setTopics("nesKafka")
+                    .setGroupId("flink")
+                    .setStartingOffsets(OffsetsInitializer.earliest())
+                    .setValueOnlyDeserializer(new DeserializationSchema<YSBRecord[]>() {
 
-						private boolean isPartitionConsumed = false;
+                        long counter = 0;
 
-						private final static int YSB_RECORD_SIZE = 78;
-						private final TypeInformation<YSBRecord[]> FLINK_INTERNAL_TYPE = TypeInformation.of(new TypeHint<YSBRecord[]>() {
-						});
+                        @Override
+                        public void open(InitializationContext context) throws Exception {
+                            DeserializationSchema.super.open(context);
+                        }
 
-						@Override
-						public YSBRecord[] deserialize(byte[] buffer) throws IOException {
-							Preconditions.checkArgument(buffer.length == 8192);
+                        private boolean isPartitionConsumed = false;
 
-							ByteBuffer wrapper = ByteBuffer.wrap(buffer);
-							int checksum = wrapper.getInt();
-							int itemsInThisBuffer = wrapper.getInt();
-							long newBacklog = wrapper.getLong();
+                        private final static int YSB_RECORD_SIZE = 78;
+                        private final TypeInformation<YSBRecord[]> FLINK_INTERNAL_TYPE = TypeInformation.of(new TypeHint<YSBRecord[]>() {
+                        });
 
-							Preconditions.checkArgument(checksum == 0x30011991);
-							Preconditions.checkArgument(((8192 - 16) / YSB_RECORD_SIZE) >= itemsInThisBuffer);
+                        @Override
+                        public YSBRecord[] deserialize(byte[] buffer) throws IOException {
+                            YSBRecord[] data = new YSBRecord[1680];
+                            ByteBuffer mbuff = ByteBuffer.wrap(buffer);
+                            for (int i = 0; i < 1680; i++) {
+                                YSBRecord ysb = new YSBRecord(
+                                        mbuff.getLong(),
+                                        mbuff.getLong(),
+                                        mbuff.getLong(),
+                                        mbuff.getLong(),
+                                        mbuff.getLong(),
+                                        mbuff.getLong(),
+                                        mbuff.getLong(),
+                                        mbuff.getInt(),
+                                        mbuff.getShort()
+                                );
+                                data[i] = ysb;
+                            }
+                            counter = counter + 1;
+                            return data;
 
-							YSBRecord[] data = new YSBRecord[itemsInThisBuffer];
-							long ingestionTimestamp = System.currentTimeMillis();
+                            /*Preconditions.checkArgument(buffer.length == 8192);
 
-							for (int i = 0; i < data.length; i++) {
-								long dummy1 = wrapper.getLong();
-								long dummy2 = wrapper.getLong();
-								long campaign_id = wrapper.getLong();
-								long dummy3 = wrapper.getLong();
-								long eventType = wrapper.getLong();
-								long timestamp = wrapper.getLong();
-								long ip = wrapper.getLong();
-								long dummy4 = wrapper.getLong();
-								long dummy5 = wrapper.getLong();
-								int dummy6 = wrapper.getInt();
-								short dummy7 = wrapper.getShort();
+                            ByteBuffer wrapper = ByteBuffer.wrap(buffer);
+                            int checksum = wrapper.getInt();
+                            int itemsInThisBuffer = wrapper.getInt();
+                            long newBacklog = wrapper.getLong();
 
-								data[i] = new YSBRecord(dummy1, dummy2, campaign_id, eventType, ip, dummy4, dummy5, dummy6, dummy7);
-							}
-							isPartitionConsumed = newBacklog <= itemsInThisBuffer;
-							return data;
-						}
+                            Preconditions.checkArgument(checksum == 0x30011991);
+                            Preconditions.checkArgument(((8192 - 16) / YSB_RECORD_SIZE) >= itemsInThisBuffer);
 
-						@Override
-						public boolean isEndOfStream(YSBRecord[] ysbRecord) {
-							return isPartitionConsumed;
-						}
+                            YSBRecord[] data = new YSBRecord[itemsInThisBuffer];
+                            long ingestionTimestamp = System.currentTimeMillis();
 
-						@Override
-						public TypeInformation<YSBRecord[]> getProducedType() {
-							return FLINK_INTERNAL_TYPE;
-						}
-					})
-					.build();
-			source = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "Kafka Source")
-					.setParallelism(parallelism)
-					.flatMap(new FlatMapFunction<YSBRecord[], YSBRecord>() {
-						@Override
-						public void flatMap(YSBRecord[] ysbRecords, Collector<YSBRecord> collector) throws Exception {
-							for (YSBRecord r : ysbRecords) {
-								collector.collect(r);
-							}
-						}
-					}).setParallelism(parallelism);
-		} else {
-			source = env.addSource(new YSBSource(runtime, numOfRecords)).setParallelism(parallelism);
+                            for (int i = 0; i < data.length; i++) {
+                                long dummy1 = wrapper.getLong();
+                                long dummy2 = wrapper.getLong();
+                                long campaign_id = wrapper.getLong();
+                                long dummy3 = wrapper.getLong();
+                                long eventType = wrapper.getLong();
+                                long timestamp = wrapper.getLong();
+                                long ip = wrapper.getLong();
+                                long dummy4 = wrapper.getLong();
+                                long dummy5 = wrapper.getLong();
+                                int dummy6 = wrapper.getInt();
+                                short dummy7 = wrapper.getShort();
 
-		}
+                                data[i] = new YSBRecord(dummy1, dummy2, campaign_id, eventType, ip, dummy4, dummy5, dummy6, dummy7);
+                            }
+                            isPartitionConsumed = newBacklog <= itemsInThisBuffer;
+                            return data;
 
+                             */
+                        }
 
-		source.flatMap(new ThroughputLogger<YSBRecord>(YSBSource.RECORD_SIZE_IN_BYTE, 1_000_000));
+                        @Override
+                        public boolean isEndOfStream(YSBRecord[] ysbRecord) {
+                            return counter >= 30000;
+                        }
 
-		source.flatMap(new Filter())
-				.setParallelism(parallelism)
-				.keyBy((KeySelector<YSBRecord.YSBFinalRecord, Long>) r -> r.campaign_id)
-				.window(TumblingProcessingTimeWindows.of(Time.seconds(1)))
-				.aggregate(new WindowingLogic())
-				.setMaxParallelism(maxParallelism)
-				.name("WindowOperator")
-				.addSink(new SinkFunction<Long>() {
-					@Override
-					public void invoke(Long value) throws Exception {
+                        @Override
+                        public TypeInformation<YSBRecord[]> getProducedType() {
+                            return FLINK_INTERNAL_TYPE;
+                        }
+                    })
+                    .build();
+            source = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "Kafka Source")
+                    .setParallelism(parallelism)
+                    .flatMap(new FlatMapFunction<YSBRecord[], YSBRecord>() {
+                        @Override
+                        public void flatMap(YSBRecord[] ysbRecords, Collector<YSBRecord> collector) throws Exception {
+                            for (YSBRecord r : ysbRecords) {
+                                collector.collect(r);
+                            }
+                        }
+                    }).setParallelism(parallelism);
+        } else {
+            source = env.addSource(new YSBSource(runtime, numOfRecords)).setParallelism(parallelism);
 
-					}
-				});
-
-		env.execute("YSB");
-
-	}
+        }
 
 
-	private static class WindowingLogic implements AggregateFunction<YSBRecord.YSBFinalRecord, Long, Long> {
-		@Override
-		public Long createAccumulator() {
-			return 0L;
-		}
+        source.flatMap(new ThroughputLogger<YSBRecord>(YSBSource.RECORD_SIZE_IN_BYTE, 1_000_000));
 
-		@Override
-		public Long add(YSBRecord.YSBFinalRecord value, Long acc) {
-			return acc + value.value;
-		}
+        source.flatMap(new Filter())
+                .setParallelism(parallelism)
+                .keyBy((KeySelector<YSBRecord.YSBFinalRecord, Long>) r -> r.campaign_id)
+                .window(TumblingProcessingTimeWindows.of(Time.seconds(1)))
+                .aggregate(new WindowingLogic())
+                .setMaxParallelism(maxParallelism)
+                .name("WindowOperator")
+                .addSink(new SinkFunction<Long>() {
+                    @Override
+                    public void invoke(Long value) throws Exception {
 
-		@Override
-		public Long getResult(Long acc) {
-			return acc;
-		}
+                    }
+                });
 
-		@Override
-		public Long merge(Long a, Long b) {
-			return a + b;
-		}
-	}
+        env.execute("YSB");
 
-	private static class Filter implements FlatMapFunction<YSBRecord, YSBRecord.YSBFinalRecord> {
+    }
 
-		@Override
-		public void flatMap(YSBRecord in, Collector<YSBRecord.YSBFinalRecord> out) throws Exception {
-			if (in.event_type == 2) { // wish for simd
-				out.collect(new YSBRecord.YSBFinalRecord(in.campaign_id, (int) in.user_id));
-			}
-		}
-	}
+
+    private static class WindowingLogic implements AggregateFunction<YSBRecord.YSBFinalRecord, Long, Long> {
+        @Override
+        public Long createAccumulator() {
+            return 0L;
+        }
+
+        @Override
+        public Long add(YSBRecord.YSBFinalRecord value, Long acc) {
+            return acc + value.value;
+        }
+
+        @Override
+        public Long getResult(Long acc) {
+            return acc;
+        }
+
+        @Override
+        public Long merge(Long a, Long b) {
+            return a + b;
+        }
+    }
+
+    private static class Filter implements FlatMapFunction<YSBRecord, YSBRecord.YSBFinalRecord> {
+
+        @Override
+        public void flatMap(YSBRecord in, Collector<YSBRecord.YSBFinalRecord> out) throws Exception {
+            if (in.event_type == 2) { // wish for simd
+                out.collect(new YSBRecord.YSBFinalRecord(in.campaign_id, (int) in.user_id));
+            }
+        }
+    }
 
 }
