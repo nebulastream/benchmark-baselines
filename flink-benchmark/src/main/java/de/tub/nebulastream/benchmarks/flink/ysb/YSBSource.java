@@ -30,8 +30,6 @@ public class YSBSource extends RichParallelSourceFunction<YSBRecord> {
         this.runtime = runtime;
     }
 
-
-
     @Override
     public void open(Configuration parameters) throws Exception {
         super.open(parameters);

@@ -38,7 +38,9 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 
 public class YSB {
@@ -54,7 +56,7 @@ public class YSB {
 		final int numOfRecords = params.getInt("numOfRecords", 1_000_000);
 		final int runtime = params.getInt("runtime", 10);
 		final boolean useKafka = params.has("useKafka");
-		final String kafkaServers = params.get("kafkaServers");
+		final String kafkaServers = params.get("kafkaServers", "34.107.58.147:9092");
 		LOG.info("Arguments: {}", params);
 
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -73,7 +75,7 @@ public class YSB {
 		env.getConfig().registerKryoType(YSBRecord.YSBFinalRecord.class);
 
 		DataStream<YSBRecord> source = null;
-		if (useKafka) {
+		if (true) {
 
 			Properties baseCfg = new Properties();
 
@@ -87,8 +89,9 @@ public class YSB {
 //
 			KafkaSource<YSBRecord[]> kafkaSource = KafkaSource.<YSBRecord[]>builder()
 					.setBootstrapServers(kafkaServers)
-					.setTopics("ysb-flink")
+					.setTopics("nesKafka")
 					.setGroupId("flink")
+					.setPartitions(new HashSet<>())
 					.setStartingOffsets(OffsetsInitializer.earliest())
 					.setValueOnlyDeserializer(new DeserializationSchema<YSBRecord[]>() {
 
