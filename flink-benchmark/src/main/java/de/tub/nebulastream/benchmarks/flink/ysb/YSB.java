@@ -164,7 +164,7 @@ public class YSB {
 
                         @Override
                         public boolean isEndOfStream(YSBRecord[] ysbRecord) {
-                            return counter >= 30000;
+                            return counter >= 10000;
                         }
 
                         @Override
@@ -194,7 +194,7 @@ public class YSB {
         source.flatMap(new Filter())
                 .setParallelism(parallelism)
                 .keyBy((KeySelector<YSBRecord.YSBFinalRecord, Long>) r -> r.campaign_id)
-                .window(TumblingProcessingTimeWindows.of(Time.seconds(1)))
+                .window(TumblingProcessingTimeWindows.of(Time.seconds(30)))
                 .aggregate(new WindowingLogic())
                 .setMaxParallelism(maxParallelism)
                 .name("WindowOperator")
@@ -236,7 +236,7 @@ public class YSB {
 
         @Override
         public void flatMap(YSBRecord in, Collector<YSBRecord.YSBFinalRecord> out) throws Exception {
-            if (in.event_type == 2) { // wish for simd
+            if (in.event_type < 1) { // wish for simd
                 out.collect(new YSBRecord.YSBFinalRecord(in.campaign_id, (int) in.user_id));
             }
         }
