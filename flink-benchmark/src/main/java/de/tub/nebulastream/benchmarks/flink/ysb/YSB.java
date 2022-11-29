@@ -91,7 +91,6 @@ public class YSB {
 					.setBootstrapServers(kafkaServers)
 					.setTopics("nesKafka")
 					.setGroupId("flink")
-					.setPartitions(new HashSet<>())
 					.setStartingOffsets(OffsetsInitializer.earliest())
 					.setValueOnlyDeserializer(new DeserializationSchema<YSBRecord[]>() {
 
