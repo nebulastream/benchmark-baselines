@@ -89,7 +89,7 @@ public class YSB {
 //
             KafkaSource<YSBRecord[]> kafkaSource = KafkaSource.<YSBRecord[]>builder()
                     .setBootstrapServers(kafkaServers)
-                    .setTopics("nesKafka2")
+                    .setTopics("nesKafka")
                     .setGroupId("flink")
                     .setStartingOffsets(OffsetsInitializer.earliest())
                     .setValueOnlyDeserializer(new DeserializationSchema<YSBRecord[]>() {
