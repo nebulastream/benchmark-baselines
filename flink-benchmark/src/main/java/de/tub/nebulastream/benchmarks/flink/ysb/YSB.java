@@ -80,12 +80,12 @@ public class YSB {
             Properties baseCfg = new Properties();
 
             baseCfg.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServers);
-            baseCfg.setProperty(ConsumerConfig.RECEIVE_BUFFER_CONFIG, "" + (4 * 1024 * 1024));
-            baseCfg.setProperty(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, "32768");
+            //   baseCfg.setProperty(ConsumerConfig.RECEIVE_BUFFER_CONFIG, "" + (4 * 1024 * 1024));
+            //  baseCfg.setProperty(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, "32768");
             baseCfg.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "im-job");
-            baseCfg.setProperty("offsets.commit.timeout.ms", "" + (3 * 60 * 1000));
-            baseCfg.setProperty(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "" + (10 * 1024 * 1024));
-            baseCfg.setProperty(ConsumerConfig.CHECK_CRCS_CONFIG, "false");
+            // baseCfg.setProperty("offsets.commit.timeout.ms", "" + (3 * 60 * 1000));
+            // baseCfg.setProperty(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "" + (10 * 1024 * 1024));
+            //baseCfg.setProperty(ConsumerConfig.CHECK_CRCS_CONFIG, "false");
 //
             KafkaSource<YSBRecord[]> kafkaSource = KafkaSource.<YSBRecord[]>builder()
                     .setBootstrapServers(kafkaServers)
