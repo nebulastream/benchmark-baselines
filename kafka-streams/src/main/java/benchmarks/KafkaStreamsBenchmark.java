@@ -181,7 +181,7 @@ public class KafkaStreamsBenchmark {
         final String bidTopic = "nexmark_bids"; // props.getProperty("topic.name.nexmark.bid");
 
 //        final String ysbTopic = "ysb_batch"; // props.getProperty("topic.name.ysb");
-        final String ysbTopic = "nesKafka1"; // props.getProperty("topic.name.ysb");
+        final String ysbTopic = "nesKafka"; // props.getProperty("topic.name.ysb");
 
 //        final String outputTopic = "output_topic"; // props.getProperty("topic.name.output");
 
