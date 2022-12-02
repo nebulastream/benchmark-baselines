@@ -172,7 +172,9 @@ public class KafkaStreamsBenchmark {
         //      throw new IllegalArgumentException("This program takes one argument: the path to a configuration file.");
         //    }
 
-        try (InputStream inputStream = new FileInputStream("/home/zeuchste/git/benchmark-baselines/kafka-streams/configuration/dev.properties")) {
+//        try (InputStream inputStream = new FileInputStream("/home/zeuchste/git/benchmark-baselines/kafka-streams/configuration/dev.properties")) {
+        try (InputStream inputStream = new FileInputStream("/home/pgrulich/benchmark-baselines/kafka-streams/configuration/dev.properties")) {
+        }
             props.load(inputStream);
         }
 
