@@ -1,8 +1,8 @@
 package serialization;
 
 public class YSBRecord {
-    private final static int YSB_RECORD_SIZE = 88;
-    private final static int YSB_RECORD_INGESTION_SIZE = 88; // todo move somewhere else
+    private final static int YSB_RECORD_SIZE = 78;
+    private final static int YSB_RECORD_INGESTION_SIZE = 78; // todo move somewhere else
 
     public long user_id;
     public long page_id;
@@ -13,10 +13,12 @@ public class YSBRecord {
     public long ip;
     public long d1;
     public long d2;
-    public long d3;
-    public long d4;
+    public int d3;
+    public short d4;
+//    public long d3;
+//    public long d4;
 
-    public YSBRecord(long user_id, long page_id, long campaign_id, long ad_type, long event_type, long current_ms, long ip, long d1, long d2, long d3, long d4) {
+    public YSBRecord(long user_id, long page_id, long campaign_id, long ad_type, long event_type, long current_ms, long ip, long d1, long d2, int d3, short d4) {
         this.user_id = user_id;
         this.page_id = page_id;
         this.campaign_id = campaign_id;

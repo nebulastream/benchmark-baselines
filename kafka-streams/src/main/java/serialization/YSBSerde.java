@@ -4,6 +4,8 @@ import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.streams.KeyValue;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,32 +18,34 @@ import java.util.Map;
 
 public class YSBSerde implements Serde<YSBRecord> {
     private static final Logger logger = LoggerFactory.getLogger(YSBSerde.class);
-    private static final int ITEMS_PER_BUFFER = 92;
+//    private static final int ITEMS_PER_BUFFER = 92;
+    private static final int ITEMS_PER_BUFFER = 1600;
 
     private static long numReceivedBuffers = 0;
     private static long startMS;
     private static long countOfLogs = 0;
 
     static public List<YSBRecord> deserializeYSBBuffer(byte[] arr) {
-        assert (arr.length == 8192); // todo assert not working
+//        assert (arr.length == 8192); // todo assert not working
 
         ByteBuffer buffer = ByteBuffer.wrap(arr);
-        int checksum = buffer.getInt();
-        int itemsInThisBuffer = buffer.getInt();
-        long newBacklog = buffer.getLong();
-
-        if (checksum != 0xdeedf000
-            || ((8192 - 16) / YSBRecord.getIngestionSize()) < itemsInThisBuffer
-            || itemsInThisBuffer != ITEMS_PER_BUFFER) {
-            logger.error("Invalid buffer! checksum: {} itemsInThisBuffer: {}", checksum, itemsInThisBuffer);
-            assert (false); // todo not working
-        }
+//        int checksum = buffer.getInt();
+//        int itemsInThisBuffer = buffer.getInt();
+//        long newBacklog = buffer.getLong();
+//        int itemsInThisBuffer =
+//        if (checksum != 0xdeedf000
+//            || ((8192 - 16) / YSBRecord.getIngestionSize()) < itemsInThisBuffer
+//            || itemsInThisBuffer != ITEMS_PER_BUFFER) {
+//            logger.error("Invalid buffer! checksum: {} itemsInThisBuffer: {}", checksum, itemsInThisBuffer);
+//            assert (false); // todo not working
+//        }
 
         List<YSBRecord> result = new LinkedList<>();
 
         // here we record the (ingested) throughput
         // we might want to move this to another class, but here is a convenient place to count buffers for now.
-        long log_every = 8_192 * 8;
+//        long log_every = 8_192 * 8;
+        long log_every = 1000;
         if (numReceivedBuffers % log_every == 0) {
             if (startMS != 0) {
                 long diff = (System.currentTimeMillis() - startMS);
@@ -62,7 +66,7 @@ public class YSBSerde implements Serde<YSBRecord> {
         }
         numReceivedBuffers++;
 
-        for (int i = 0; i < itemsInThisBuffer; i++) {
+        for (int i = 0; i < ITEMS_PER_BUFFER; i++) {
             long user_id = buffer.getLong();
             long page_id = buffer.getLong();
             long campaign_id = buffer.getLong();
@@ -72,10 +76,11 @@ public class YSBSerde implements Serde<YSBRecord> {
             long ip = buffer.getLong();
             long d1 = buffer.getLong();
             long d2 = buffer.getLong();
-            long d3 = buffer.getLong();
-            long d4 = buffer.getLong();
+            int d3 = buffer.getInt();
+            short d4 = buffer.getShort();
 
             YSBRecord rec = new YSBRecord(user_id, page_id, campaign_id, ad_type, event_type, current_ms, ip, d1, d2, d3, d4);
+//            result.add(new KeyValue<>(campaign_id, rec));
             result.add(rec);
         }
 
@@ -105,8 +110,8 @@ public class YSBSerde implements Serde<YSBRecord> {
             long ip = buffer.getLong();
             long d1 = buffer.getLong();
             long d2 = buffer.getLong();
-            long d3 = buffer.getLong();
-            long d4 = buffer.getLong();
+            int d3 = buffer.getInt();
+            short d4 = buffer.getShort();
 
             return new YSBRecord(user_id, page_id, campaign_id, ad_type, event_type, current_ms, ip, d1, d2, d3, d4);
         }
@@ -134,8 +139,8 @@ public class YSBSerde implements Serde<YSBRecord> {
             buffer.putLong(data.ip);
             buffer.putLong(data.d1);
             buffer.putLong(data.d2);
-            buffer.putLong(data.d3);
-            buffer.putLong(data.d4);
+            buffer.putInt(data.d3);
+            buffer.putShort(data.d4);
 
             byte[] bytes = buffer.array();
 //            System.out.println("YSB SER: Bytes size: " + bytes.length);

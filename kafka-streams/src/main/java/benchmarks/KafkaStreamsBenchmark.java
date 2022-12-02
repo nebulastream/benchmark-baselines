@@ -8,6 +8,7 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
+import org.apache.kafka.streams.KeyValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import serialization.*;
@@ -30,7 +31,6 @@ STATUS
 
 
  */
-
 
 
 public class KafkaStreamsBenchmark {
@@ -73,10 +73,10 @@ public class KafkaStreamsBenchmark {
         StreamsBuilder builder = new StreamsBuilder();
 
         builder
-            .stream(auctionTopic, Consumed.with(bytesSerde, bytesSerde))
-            .flatMapValues( values -> deserializeAuctionBuffer(values.get()) )
-            .peek((k,v) -> logger.info("Observed event: {} {}", v.auctionId, v.timestamp))
-            .to(outputTopic, Produced.with(bytesSerde, auctionSerde))
+                .stream(auctionTopic, Consumed.with(bytesSerde, bytesSerde))
+                .flatMapValues(values -> deserializeAuctionBuffer(values.get()))
+                .peek((k, v) -> logger.info("Observed event: {} {}", v.auctionId, v.timestamp))
+                .to(outputTopic, Produced.with(bytesSerde, auctionSerde))
         ;
 
         return builder.build();
@@ -86,35 +86,35 @@ public class KafkaStreamsBenchmark {
         StreamsBuilder builder = new StreamsBuilder();
 
         builder
-            .stream(auctionTopic, Consumed.with(bytesSerde, bytesSerde))
-            .flatMapValues( values -> deserializeBidBuffer(values.get()) )
-            .peek((k,v) -> logger.info("Observed BID event: personId: {}, auctionId: {}, bid: {}", v.personId, v.auctionId, v.bid))
-            .to(outputTopic, Produced.with(bytesSerde, bidSerde))
+                .stream(auctionTopic, Consumed.with(bytesSerde, bytesSerde))
+                .flatMapValues(values -> deserializeBidBuffer(values.get()))
+                .peek((k, v) -> logger.info("Observed BID event: personId: {}, auctionId: {}, bid: {}", v.personId, v.auctionId, v.bid))
+                .to(outputTopic, Produced.with(bytesSerde, bidSerde))
         ;
 
         return builder.build();
     }
 
-    static Topology buildYSBBufferTestTopology(String ysbBatchTopic, String outputTopic) {
-        StreamsBuilder builder = new StreamsBuilder();
-
-        builder
-            .stream(ysbBatchTopic, Consumed.with(bytesSerde, bytesSerde))
-            .flatMapValues( values -> deserializeYSBBuffer(values.get()) )
-            .peek((k,v) -> logger.info("Observed YSB event: user_id: {}, campaign_id: {}, IP: {}", v.user_id, v.campaign_id, v.ip))
-            .to(outputTopic, Produced.with(bytesSerde, ysbSerde))
-        ;
-
-        return builder.build();
-    }
+//    static Topology buildYSBBufferTestTopology(String ysbBatchTopic, String outputTopic) {
+//        StreamsBuilder builder = new StreamsBuilder();
+//
+//        builder
+//                .stream(ysbBatchTopic, Consumed.with(bytesSerde, bytesSerde))
+//                .flatMapValues(values -> deserializeYSBBuffer(values.get()))
+//                .peek((k, v) -> logger.info("Observed YSB event: user_id: {}, campaign_id: {}, IP: {}", v.user_id, v.campaign_id, v.ip))
+//                .to(outputTopic, Produced.with(bytesSerde, ysbSerde))
+//        ;
+//
+//        return builder.build();
+//    }
 
     // Tests for Kafka-internal SerDes
     static Topology buildAuctionRecordTestTopology(String auctionRecordTopic) {
         StreamsBuilder builder = new StreamsBuilder();
 
         builder
-            .stream(auctionRecordTopic, Consumed.with(bytesSerde, auctionSerde))
-            .foreach((k,v) -> logger.info("Record from 'Output_topic': {} {}", v.auctionId, v.timestamp))
+                .stream(auctionRecordTopic, Consumed.with(bytesSerde, auctionSerde))
+                .foreach((k, v) -> logger.info("Record from 'Output_topic': {} {}", v.auctionId, v.timestamp))
         ;
 
         return builder.build();
@@ -142,19 +142,25 @@ public class KafkaStreamsBenchmark {
         Aggregator<Bytes, YSBRecord, Long> ysbAggUserIdSum =
                 (key, value, prevSum) -> value.user_id + prevSum;
 
-        Duration windowSize = Duration.ofSeconds(2);
+        Duration windowSize = Duration.ofSeconds(3);
         TimeWindows tumblingWindow = TimeWindows.of(windowSize);
 
         builder
-                .stream(ysbTopic, Consumed.with(bytesSerde, bytesSerde))
-                .flatMapValues( values -> deserializeYSBBuffer(values.get()) )
-                .groupByKey()
-                .windowedBy(tumblingWindow)
-                .aggregate(() -> 0L,
-                        ysbAggUserIdSum,
-                        Materialized.with(bytesSerde, longSerde))
+                .stream(ysbTopic, Consumed.with(Serdes.String(), bytesSerde))
+                .flatMapValues(values -> deserializeYSBBuffer(values.get()))
+                .map((key, value) -> new KeyValue<>(value.campaign_id, value.user_id))
+                .groupByKey(Grouped.with(Serdes.Long(), Serdes.Long()))
+                .reduce(Long::sum)
+//                .filter((k,v) -> (v.campaign_id < 1))
+//                .groupByKey()
+//                .windowedBy(tumblingWindow)
+//                .aggregate(() -> 0L,
+//                        ysbAggUserIdSum,
+//                        Materialized.with(bytesSerde, longSerde))
                 .toStream()
-                .peek((k, v) -> logger.info("sum of window: " + v))
+//                .peek((k, v) -> logger.info("sum of window: " + v))
+//                .peek((k, v) -> logger.info("sum of window: " + v))
+//                .peek((k, v) -> logger.info("key {} and val of window: {} ", k, v))
         ;
 
         return builder.build();
@@ -162,11 +168,11 @@ public class KafkaStreamsBenchmark {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length < 1) {
-            throw new IllegalArgumentException("This program takes one argument: the path to a configuration file.");
-        }
+        //    if (args.length < 1) {
+        //      throw new IllegalArgumentException("This program takes one argument: the path to a configuration file.");
+        //    }
 
-        try (InputStream inputStream = new FileInputStream(args[0])) {
+        try (InputStream inputStream = new FileInputStream("/home/zeuchste/git/benchmark-baselines/kafka-streams/configuration/dev.properties")) {
             props.load(inputStream);
         }
 
@@ -174,9 +180,10 @@ public class KafkaStreamsBenchmark {
         final String auctionTopic = "nexmark_persons"; // props.getProperty("topic.name.nexmark.auction");
         final String bidTopic = "nexmark_bids"; // props.getProperty("topic.name.nexmark.bid");
 
-        final String ysbTopic = "ysb_batch"; // props.getProperty("topic.name.ysb");
+//        final String ysbTopic = "ysb_batch"; // props.getProperty("topic.name.ysb");
+        final String ysbTopic = "nesKafka1"; // props.getProperty("topic.name.ysb");
 
-        final String outputTopic = "output_topic"; // props.getProperty("topic.name.output");
+//        final String outputTopic = "output_topic"; // props.getProperty("topic.name.output");
 
         logger.info("Nexmark person topic: " + personTopic);
         logger.info("Nexmark auction topic: " + auctionTopic);
@@ -184,51 +191,72 @@ public class KafkaStreamsBenchmark {
 
         logger.info("YSB topic: " + ysbTopic);
 
-        logger.info("output topic: " + outputTopic);
+//        logger.info("output topic: " + outputTopic);
+        //create topic
+//        Util utility = new Util();
+//        utility.createTopics(
+//                props,
+//                Arrays.asList(
+////                        new NewTopic(personTopic, Optional.empty(), Optional.empty()),
+////                        new NewTopic(auctionTopic, Optional.empty(), Optional.empty()),
+////                        new NewTopic(bidTopic, Optional.empty(), Optional.empty()),
+////                        new NewTopic(outputTopic, Optional.empty(), Optional.empty()),
+//                        new NewTopic(ysbTopic, Optional.empty(), Optional.empty())
+//                ));
+//        try (Util.DummyProducer rando = utility.startNewDummyProducer(props, ysbTopic)) {
+//            //build test data
+//            KafkaStreams productionStream = new KafkaStreams(
+//                    buildYSBBufferTestTopology(ysbTopic, ysbTopic),
+//                    props);
+//
+//            Runtime.getRuntime().addShutdownHook(new Thread(productionStream::close));
+//
+//            logger.info("SerDes Tests Started");
+//            runKafkaStreams(productionStream);
+//            logger.info("SerDes Tests ended");
+//        }
+        //run benchmark
+        KafkaStreams processingStream = new KafkaStreams(
+                topologyYSB(ysbTopic),
+                props);
 
-        try (Util utility = new Util()) {
-            utility.createTopics(
-                props,
-                Arrays.asList(
-                        new NewTopic(personTopic, Optional.empty(), Optional.empty()),
-                        new NewTopic(auctionTopic, Optional.empty(), Optional.empty()),
-                        new NewTopic(bidTopic, Optional.empty(), Optional.empty()),
-                        new NewTopic(outputTopic, Optional.empty(), Optional.empty()),
-                        new NewTopic(ysbTopic, Optional.empty(), Optional.empty())
-                ));
+        Runtime.getRuntime().addShutdownHook(new Thread(processingStream::close));
 
-            boolean serializationTest = false;
-            if (serializationTest == true) {
-                // only to test if SerDes work
-                try (Util.DummyProducer rando = utility.startNewDummyProducer(props, outputTopic)) {
+        logger.info("Kafka Streams Benchmarks Started");
+        runKafkaStreams(processingStream);
 
-                    KafkaStreams kafkaStreams = new KafkaStreams(
-                            buildAuctionRecordTestTopology(outputTopic),
-                            props);
-
-                    Runtime.getRuntime().addShutdownHook(new Thread(kafkaStreams::close));
-
-                    logger.info("SerDes Tests Started");
-                    runKafkaStreams(kafkaStreams);
-
-                }
-
-            } else {
-                KafkaStreams kafkaStreams = new KafkaStreams(
-//                        buildAuctionBufferTestTopology(auctionTopic, outputTopic),
-//                        buildAuctionRecordTestTopology(outputTopic),
-//                        buildBidBufferTestTopology(bidTopic, outputTopic),
-//                        buildYSBBufferTestTopology(ysbTopic, outputTopic),
-
-//                        topologyNexmarkQ5(auctionTopic, outputTopic),
-                        topologyYSB(ysbTopic),
-                        props);
-
-                Runtime.getRuntime().addShutdownHook(new Thread(kafkaStreams::close));
-
-                logger.info("Kafka Streams Benchmarks Started");
-                runKafkaStreams(kafkaStreams);
-            }
-        }
+//
+//            boolean serializationTest = true;
+//            if (serializationTest == true) {
+//                // only to test if SerDes work
+//                try (Util.DummyProducer rando = utility.startNewDummyProducer(props, ysbTopic)) {
+//
+////                    KafkaStreams kafkaStreams = new KafkaStreams(
+////                            buildYSBBufferTestTopology(ysbTopic),
+////                            props);
+////
+////                    Runtime.getRuntime().addShutdownHook(new Thread(kafkaStreams::close));
+////
+////                    logger.info("SerDes Tests Started");
+////                    runKafkaStreams(kafkaStreams);
+//
+//                }
+//
+//            } else {
+//                KafkaStreams kafkaStreams = new KafkaStreams(
+////                        buildAuctionBufferTestTopology(auctionTopic, outputTopic),
+////                        buildAuctionRecordTestTopology(outputTopic),
+////                        buildBidBufferTestTopology(bidTopic, outputTopic),
+////                        buildYSBBufferTestTopology(ysbTopic, outputTopic),
+////                        topologyNexmarkQ5(auctionTopic, outputTopic),
+//                        topologyYSB(ysbTopic),
+//                        props);
+//
+//                Runtime.getRuntime().addShutdownHook(new Thread(kafkaStreams::close));
+//
+//                logger.info("Kafka Streams Benchmarks Started");
+//                runKafkaStreams(kafkaStreams);
+//            }
+//        }
     }
 }
