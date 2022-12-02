@@ -151,12 +151,6 @@ public class KafkaStreamsBenchmark {
                 .map((key, value) -> new KeyValue<>(value.campaign_id, value.user_id))
                 .groupByKey(Grouped.with(Serdes.Long(), Serdes.Long()))
                 .reduce(Long::sum)
-//                .filter((k,v) -> (v.campaign_id < 1))
-//                .groupByKey()
-//                .windowedBy(tumblingWindow)
-//                .aggregate(() -> 0L,
-//                        ysbAggUserIdSum,
-//                        Materialized.with(bytesSerde, longSerde))
                 .toStream()
 //                .peek((k, v) -> logger.info("sum of window: " + v))
 //                .peek((k, v) -> logger.info("sum of window: " + v))
