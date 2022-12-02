@@ -173,12 +173,10 @@ public class KafkaStreamsBenchmark {
         //    }
 
 //        try (InputStream inputStream = new FileInputStream("/home/zeuchste/git/benchmark-baselines/kafka-streams/configuration/dev.properties")) {
-        try (InputStream inputStream = new FileInputStream("/home/pgrulich/benchmark-baselines/kafka-streams/configuration/dev.properties")) {
-        }
-            props.load(inputStream);
-        }
+        InputStream inputStream = new FileInputStream("/home/pgrulich/benchmark-baselines/kafka-streams/configuration/dev.properties");
+        props.load(inputStream);
 
-        final String personTopic = "nexmark_auctions"; // props.getProperty("topic.name.nexmark.person");       ^
+        final String personTopic = "nexmark_auctions"; // props.getProperty("topic.name.nexmark.person");
         final String auctionTopic = "nexmark_persons"; // props.getProperty("topic.name.nexmark.auction");
         final String bidTopic = "nexmark_bids"; // props.getProperty("topic.name.nexmark.bid");
 
