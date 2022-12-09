@@ -129,7 +129,7 @@ public class YSB {
                     .build();
 
             SingleOutputStreamOperator<YSBRecord> source = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "Kafka Source")
-                    .setParallelism(parallelism)
+                    //.setParallelism(parallelism)
                     .flatMap(new FlatMapFunction<YSBRecord[], YSBRecord>() {
                         @Override
                         public void flatMap(YSBRecord[] ysbRecords, Collector<YSBRecord> collector) throws Exception {
@@ -137,7 +137,7 @@ public class YSB {
                                 collector.collect(r);
                             }
                         }
-                    }).setParallelism(parallelism);
+                    });
 
             source.flatMap(new ThroughputLogger<YSBRecord>(YSBSource.RECORD_SIZE_IN_BYTE, 10_000));
 
