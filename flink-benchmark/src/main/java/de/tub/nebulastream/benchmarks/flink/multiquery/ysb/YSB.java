@@ -43,7 +43,7 @@ public class YSB {
         final int queries = params.getInt("queries", 1);
         final boolean sourceSharing = params.getBoolean("sourceSharing", true);
         final boolean useKafka = params.has("useKafka");
-        final String kafkaServers = params.get("kafkaServers", "34.107.58.147:9092");
+        final String kafkaServers = params.get("kafkaServers", "35.242.227.178:9092");
         LOG.info("Arguments: {}", params);
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
