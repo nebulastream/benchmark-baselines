@@ -167,7 +167,7 @@ public class YSB {
                                 }
                             }
                         });
-                source.flatMap(new ThroughputLogger<YSBRecord>(YSBSource.RECORD_SIZE_IN_BYTE, 1_000, i));
+                source.flatMap(new ThroughputLogger<YSBRecord>(YSBSource.RECORD_SIZE_IN_BYTE, 10_000_0, i));
 
                 source.flatMap(new Filter())
                         .keyBy((KeySelector<YSBRecord.YSBFinalRecord, Long>) r -> r.campaign_id)
