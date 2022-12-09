@@ -41,7 +41,7 @@ public class YSB {
         final int numOfRecords = params.getInt("numOfRecords", 100_000);
         final int runtime = params.getInt("runtime", 10);
         final int queries = params.getInt("queries", 1);
-        final boolean sourceSharing = params.getBoolean("sourceSharing", true);
+        final boolean sourceSharing = params.getBoolean("sourceSharing", false);
         final boolean useKafka = params.has("useKafka");
         final String kafkaServers = params.get("kafkaServers", "35.242.227.178:9092");
         LOG.info("Arguments: {}", params);
@@ -62,71 +62,71 @@ public class YSB {
         env.getConfig().registerKryoType(YSBRecord.class);
         env.getConfig().registerKryoType(YSBRecord.YSBFinalRecord.class);
 
-        if (sourceSharing) {
+        Properties baseCfg = new Properties();
 
-            Properties baseCfg = new Properties();
-
-            baseCfg.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServers);
-            //   baseCfg.setProperty(ConsumerConfig.RECEIVE_BUFFER_CONFIG, "" + (4 * 1024 * 1024));
-            //  baseCfg.setProperty(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, "32768");
-            baseCfg.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "im-job");
-            // baseCfg.setProperty("offsets.commit.timeout.ms", "" + (3 * 60 * 1000));
-            // baseCfg.setProperty(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "" + (10 * 1024 * 1024));
-            //baseCfg.setProperty(ConsumerConfig.CHECK_CRCS_CONFIG, "false");
+        baseCfg.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServers);
+        //   baseCfg.setProperty(ConsumerConfig.RECEIVE_BUFFER_CONFIG, "" + (4 * 1024 * 1024));
+        //  baseCfg.setProperty(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, "32768");
+        baseCfg.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "im-job");
+        // baseCfg.setProperty("offsets.commit.timeout.ms", "" + (3 * 60 * 1000));
+        // baseCfg.setProperty(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "" + (10 * 1024 * 1024));
+        //baseCfg.setProperty(ConsumerConfig.CHECK_CRCS_CONFIG, "false");
 //
-            KafkaSource<YSBRecord[]> kafkaSource = KafkaSource.<YSBRecord[]>builder()
-                    .setBootstrapServers(kafkaServers)
-                    .setTopics("nesKafka")
-                    .setGroupId("flink")
-                    .setStartingOffsets(OffsetsInitializer.earliest())
-                    .setValueOnlyDeserializer(new DeserializationSchema<YSBRecord[]>() {
+        KafkaSource<YSBRecord[]> kafkaSource = KafkaSource.<YSBRecord[]>builder()
+                .setBootstrapServers(kafkaServers)
+                .setTopics("nesKafka")
+                .setGroupId("flink")
+                .setStartingOffsets(OffsetsInitializer.earliest())
+                .setValueOnlyDeserializer(new DeserializationSchema<YSBRecord[]>() {
 
-                        long counter = 0;
+                    long counter = 0;
 
-                        @Override
-                        public void open(InitializationContext context) throws Exception {
-                            DeserializationSchema.super.open(context);
+                    @Override
+                    public void open(InitializationContext context) throws Exception {
+                        DeserializationSchema.super.open(context);
+                    }
+
+                    private boolean isPartitionConsumed = false;
+
+                    private final static int YSB_RECORD_SIZE = 78;
+                    private final TypeInformation<YSBRecord[]> FLINK_INTERNAL_TYPE = TypeInformation.of(new TypeHint<YSBRecord[]>() {
+                    });
+
+                    @Override
+                    public YSBRecord[] deserialize(byte[] buffer) throws IOException {
+                        YSBRecord[] data = new YSBRecord[1680];
+                        ByteBuffer mbuff = ByteBuffer.wrap(buffer);
+                        for (int i = 0; i < 1680; i++) {
+                            YSBRecord ysb = new YSBRecord(
+                                    mbuff.getLong(),
+                                    mbuff.getLong(),
+                                    mbuff.getLong(),
+                                    mbuff.getLong(),
+                                    mbuff.getLong(),
+                                    mbuff.getLong(),
+                                    mbuff.getLong(),
+                                    mbuff.getInt(),
+                                    mbuff.getShort()
+                            );
+                            data[i] = ysb;
                         }
+                        counter = counter + 1;
+                        return data;
+                    }
 
-                        private boolean isPartitionConsumed = false;
+                    @Override
+                    public boolean isEndOfStream(YSBRecord[] ysbRecord) {
+                        return counter >= 10000;
+                    }
 
-                        private final static int YSB_RECORD_SIZE = 78;
-                        private final TypeInformation<YSBRecord[]> FLINK_INTERNAL_TYPE = TypeInformation.of(new TypeHint<YSBRecord[]>() {
-                        });
+                    @Override
+                    public TypeInformation<YSBRecord[]> getProducedType() {
+                        return FLINK_INTERNAL_TYPE;
+                    }
+                })
+                .build();
 
-                        @Override
-                        public YSBRecord[] deserialize(byte[] buffer) throws IOException {
-                            YSBRecord[] data = new YSBRecord[1680];
-                            ByteBuffer mbuff = ByteBuffer.wrap(buffer);
-                            for (int i = 0; i < 1680; i++) {
-                                YSBRecord ysb = new YSBRecord(
-                                        mbuff.getLong(),
-                                        mbuff.getLong(),
-                                        mbuff.getLong(),
-                                        mbuff.getLong(),
-                                        mbuff.getLong(),
-                                        mbuff.getLong(),
-                                        mbuff.getLong(),
-                                        mbuff.getInt(),
-                                        mbuff.getShort()
-                                );
-                                data[i] = ysb;
-                            }
-                            counter = counter + 1;
-                            return data;
-                        }
-
-                        @Override
-                        public boolean isEndOfStream(YSBRecord[] ysbRecord) {
-                            return counter >= 10000;
-                        }
-
-                        @Override
-                        public TypeInformation<YSBRecord[]> getProducedType() {
-                            return FLINK_INTERNAL_TYPE;
-                        }
-                    })
-                    .build();
+        if (sourceSharing) {
 
             SingleOutputStreamOperator<YSBRecord> source = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "Kafka Source")
                     //.setParallelism(parallelism)
@@ -156,9 +156,17 @@ public class YSB {
             }
         } else {
             for (int i = 0; i < queries; i++) {
-                DataStreamSource<YSBRecord> source = env.addSource(new YSBSource(runtime, numOfRecords))
-                        .setParallelism(parallelism);
 
+                SingleOutputStreamOperator<YSBRecord> source = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "Kafka Source")
+                        //.setParallelism(parallelism)
+                        .flatMap(new FlatMapFunction<YSBRecord[], YSBRecord>() {
+                            @Override
+                            public void flatMap(YSBRecord[] ysbRecords, Collector<YSBRecord> collector) throws Exception {
+                                for (YSBRecord r : ysbRecords) {
+                                    collector.collect(r);
+                                }
+                            }
+                        });
                 source.flatMap(new ThroughputLogger<YSBRecord>(YSBSource.RECORD_SIZE_IN_BYTE, 1_000, i));
 
                 source.flatMap(new Filter())
