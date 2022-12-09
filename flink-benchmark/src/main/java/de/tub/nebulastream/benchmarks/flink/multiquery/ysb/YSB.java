@@ -41,7 +41,7 @@ public class YSB {
         final int numOfRecords = params.getInt("numOfRecords", 100_000);
         final int runtime = params.getInt("runtime", 10);
         final int queries = params.getInt("queries", 1);
-        final boolean sourceSharing = params.getBoolean("sourceSharing", false);
+        final boolean sourceSharing = params.getBoolean("sourceSharing", true);
         final boolean useKafka = params.has("useKafka");
         final String kafkaServers = params.get("kafkaServers", "35.242.227.178:9092");
         LOG.info("Arguments: {}", params);
