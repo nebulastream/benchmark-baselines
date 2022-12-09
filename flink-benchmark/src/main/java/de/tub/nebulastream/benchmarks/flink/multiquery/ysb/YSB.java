@@ -3,18 +3,30 @@ package de.tub.nebulastream.benchmarks.flink.multiquery.ysb;
 import de.tub.nebulastream.benchmarks.flink.utils.ThroughputLogger;
 import de.tub.nebulastream.benchmarks.flink.ysb.YSBRecord;
 import de.tub.nebulastream.benchmarks.flink.ysb.YSBSource;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.api.common.typeinfo.TypeHint;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.connector.kafka.source.KafkaSource;
+import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Properties;
 
 public class YSB {
 
@@ -29,8 +41,9 @@ public class YSB {
         final int numOfRecords = params.getInt("numOfRecords", 100_000);
         final int runtime = params.getInt("runtime", 10);
         final int queries = params.getInt("queries", 1);
-        final boolean sourceSharing = params.getBoolean("sourceSharing", false);
-
+        final boolean sourceSharing = params.getBoolean("sourceSharing", true);
+        final boolean useKafka = params.has("useKafka");
+        final String kafkaServers = params.get("kafkaServers", "34.107.58.147:9092");
         LOG.info("Arguments: {}", params);
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -51,8 +64,80 @@ public class YSB {
 
         if (sourceSharing) {
 
-            DataStreamSource<YSBRecord> source = env.addSource(new YSBSource(runtime, numOfRecords))
-                    .setParallelism(parallelism);
+            Properties baseCfg = new Properties();
+
+            baseCfg.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServers);
+            //   baseCfg.setProperty(ConsumerConfig.RECEIVE_BUFFER_CONFIG, "" + (4 * 1024 * 1024));
+            //  baseCfg.setProperty(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, "32768");
+            baseCfg.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "im-job");
+            // baseCfg.setProperty("offsets.commit.timeout.ms", "" + (3 * 60 * 1000));
+            // baseCfg.setProperty(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "" + (10 * 1024 * 1024));
+            //baseCfg.setProperty(ConsumerConfig.CHECK_CRCS_CONFIG, "false");
+//
+            KafkaSource<YSBRecord[]> kafkaSource = KafkaSource.<YSBRecord[]>builder()
+                    .setBootstrapServers(kafkaServers)
+                    .setTopics("nesKafka")
+                    .setGroupId("flink")
+                    .setStartingOffsets(OffsetsInitializer.earliest())
+                    .setValueOnlyDeserializer(new DeserializationSchema<YSBRecord[]>() {
+
+                        long counter = 0;
+
+                        @Override
+                        public void open(InitializationContext context) throws Exception {
+                            DeserializationSchema.super.open(context);
+                        }
+
+                        private boolean isPartitionConsumed = false;
+
+                        private final static int YSB_RECORD_SIZE = 78;
+                        private final TypeInformation<YSBRecord[]> FLINK_INTERNAL_TYPE = TypeInformation.of(new TypeHint<YSBRecord[]>() {
+                        });
+
+                        @Override
+                        public YSBRecord[] deserialize(byte[] buffer) throws IOException {
+                            YSBRecord[] data = new YSBRecord[1680];
+                            ByteBuffer mbuff = ByteBuffer.wrap(buffer);
+                            for (int i = 0; i < 1680; i++) {
+                                YSBRecord ysb = new YSBRecord(
+                                        mbuff.getLong(),
+                                        mbuff.getLong(),
+                                        mbuff.getLong(),
+                                        mbuff.getLong(),
+                                        mbuff.getLong(),
+                                        mbuff.getLong(),
+                                        mbuff.getLong(),
+                                        mbuff.getInt(),
+                                        mbuff.getShort()
+                                );
+                                data[i] = ysb;
+                            }
+                            counter = counter + 1;
+                            return data;
+                        }
+
+                        @Override
+                        public boolean isEndOfStream(YSBRecord[] ysbRecord) {
+                            return counter >= 10000;
+                        }
+
+                        @Override
+                        public TypeInformation<YSBRecord[]> getProducedType() {
+                            return FLINK_INTERNAL_TYPE;
+                        }
+                    })
+                    .build();
+
+            SingleOutputStreamOperator<YSBRecord> source = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "Kafka Source")
+                    .setParallelism(parallelism)
+                    .flatMap(new FlatMapFunction<YSBRecord[], YSBRecord>() {
+                        @Override
+                        public void flatMap(YSBRecord[] ysbRecords, Collector<YSBRecord> collector) throws Exception {
+                            for (YSBRecord r : ysbRecords) {
+                                collector.collect(r);
+                            }
+                        }
+                    }).setParallelism(parallelism);
 
             source.flatMap(new ThroughputLogger<YSBRecord>(YSBSource.RECORD_SIZE_IN_BYTE, 10_000));
 
