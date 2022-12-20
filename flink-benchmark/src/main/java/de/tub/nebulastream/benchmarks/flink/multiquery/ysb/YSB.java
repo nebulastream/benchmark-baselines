@@ -15,6 +15,8 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.common.functions.FilterFunction;
 
 public class YSB {
 
@@ -49,7 +51,8 @@ public class YSB {
         env.getConfig().registerKryoType(YSBRecord.class);
         env.getConfig().registerKryoType(YSBRecord.YSBFinalRecord.class);
 
-        if (sourceSharing) {
+//        sourceSharing = true;
+//        if (sourceSharing) {
 
             DataStreamSource<YSBRecord> source = env.addSource(new YSBSource(runtime, numOfRecords))
                     .setParallelism(parallelism);
@@ -57,38 +60,39 @@ public class YSB {
             source.flatMap(new ThroughputLogger<YSBRecord>(YSBSource.RECORD_SIZE_IN_BYTE, 10_000));
 
             for (int i = 0; i < queries; i++) {
-                source.flatMap(new Filter())
-                        .keyBy((KeySelector<YSBRecord.YSBFinalRecord, Long>) r -> r.campaign_id)
-                        .window(TumblingProcessingTimeWindows.of(Time.seconds(1)))
-                        .aggregate(new WindowingLogic())
-                        .name("WindowOperator")
-                        .addSink(new SinkFunction<Long>() {
+                source.filter(new FilterFunction<YSBRecord>() {
+                    @Override
+                    public boolean filter(YSBRecord value) throws Exception {
+                        return value.event_type > 8;
+                    }
+                })
+                        .addSink(new SinkFunction<YSBRecord>() {
                             @Override
-                            public void invoke(Long value) throws Exception {
+                            public void invoke(YSBRecord value) throws Exception {
 
                             }
                         });
             }
-        } else {
-            for (int i = 0; i < queries; i++) {
-                DataStreamSource<YSBRecord> source = env.addSource(new YSBSource(runtime, numOfRecords))
-                        .setParallelism(parallelism);
-
-                source.flatMap(new ThroughputLogger<YSBRecord>(YSBSource.RECORD_SIZE_IN_BYTE, 1_000, i));
-
-                source.flatMap(new Filter())
-                        .keyBy((KeySelector<YSBRecord.YSBFinalRecord, Long>) r -> r.campaign_id)
-                        .window(TumblingProcessingTimeWindows.of(Time.seconds(1)))
-                        .aggregate(new WindowingLogic())
-                        .name("WindowOperator")
-                        .addSink(new SinkFunction<Long>() {
-                            @Override
-                            public void invoke(Long value) throws Exception {
-
-                            }
-                        });
-            }
-        }
+//        } else {
+//            for (int i = 0; i < queries; i++) {
+//                DataStreamSource<YSBRecord> source = env.addSource(new YSBSource(runtime, numOfRecords))
+//                        .setParallelism(parallelism);
+//
+//                source.flatMap(new ThroughputLogger<YSBRecord>(YSBSource.RECORD_SIZE_IN_BYTE, 1_000, i));
+//
+//                source.flatMap(new Filter())
+////                        .keyBy((KeySelector<YSBRecord.YSBFinalRecord, Long>) r -> r.campaign_id)
+////                        .window(TumblingProcessingTimeWindows.of(Time.seconds(1)))
+////                        .aggregate(new WindowingLogic())
+////                        .name("WindowOperator")
+//                        .addSink(new SinkFunction<Long>() {
+//                            @Override
+//                            public void invoke(Long value) throws Exception {
+//
+//                            }
+//                        });
+//            }
+//        }
         env.execute("YSB");
 
     }
@@ -120,7 +124,7 @@ public class YSB {
 
         @Override
         public void flatMap(YSBRecord in, Collector<YSBRecord.YSBFinalRecord> out) throws Exception {
-            if (in.event_type == 2) { // wish for simd
+            if (in.event_type > 8) { // wish for simd
                 out.collect(new YSBRecord.YSBFinalRecord(in.campaign_id, (int) in.user_id));
             }
         }
