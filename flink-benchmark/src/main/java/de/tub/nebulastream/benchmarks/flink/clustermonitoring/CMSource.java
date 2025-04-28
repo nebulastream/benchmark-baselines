@@ -53,8 +53,7 @@ public class CMSource extends RichParallelSourceFunction<CMRecord> {
             if (currentLineIndex >= lines.size()) {
                 currentLineIndex = 0;
             }
-            ArrayList<String> words = lines.get(0);
-            System.out.println(words);
+            ArrayList<String> words = lines.get(currentLineIndex);
             // creationTS
             mbuff.putLong(Long.parseLong(words.get(0)));
             // jobId
@@ -65,18 +64,20 @@ public class CMSource extends RichParallelSourceFunction<CMRecord> {
             mbuff.putLong(Long.parseLong(words.get(3)));
             // eventType
             mbuff.putShort(Short.parseShort(words.get(4)));
-            // category
+            // userId
             mbuff.putShort(Short.parseShort(words.get(5)));
-            // priority
+            // category
             mbuff.putShort(Short.parseShort(words.get(6)));
+            // priority
+            mbuff.putShort(Short.parseShort(words.get(7)));
             // cpu
-            mbuff.putFloat(Float.parseFloat(words.get(7)));
-            // ram
             mbuff.putFloat(Float.parseFloat(words.get(8)));
-            // disk
+            // ram
             mbuff.putFloat(Float.parseFloat(words.get(9)));
+            // disk
+            mbuff.putFloat(Float.parseFloat(words.get(10)));
             // constraints
-            mbuff.putShort(Short.parseShort(words.get(10)));
+            mbuff.putShort(Short.parseShort(words.get(11)));
             currentLineIndex++;
         }
 
@@ -99,6 +100,7 @@ public class CMSource extends RichParallelSourceFunction<CMRecord> {
                         mbuff.getLong(),
                         mbuff.getLong(),
                         mbuff.getLong(),
+                        mbuff.getShort(),
                         mbuff.getShort(),
                         mbuff.getShort(),
                         mbuff.getShort(),
