@@ -10,16 +10,16 @@ flink = "flink-1.20.1"
 jar_path = os.path.join("target", "yahoo-bench-flink_2.11-0.1-SNAPSHOT.jar")
 
 queries = {
-    "clustermonitoring1": "clustermonitoring.CM1",
-    "clustermonitoring2": "clustermonitoring.CM2",
-    "linearroadbenchmark1": "linearroad.LR1",
-    "linearroadbenchmark2": "linearroad.LR2",
-    "manufacturingequipment1": "manufacturingequipment.ME1",
-    "smartgrid1": "smartgrid.SG1",
-    "smartgrid2": "smartgrid.SG2",
-    "smartgrid3": "smartgrid.SG3",
-    "ysb": "ysb.YSB",
-    "multiquery_ysb": "multiquery.ysb.YSB",
+    #"clustermonitoring1": "clustermonitoring.CM1",
+    #"clustermonitoring2": "clustermonitoring.CM2",
+    #"linearroadbenchmark1": "linearroad.LR1",
+    #"linearroadbenchmark2": "linearroad.LR2",
+    #"manufacturingequipment1": "manufacturingequipment.ME1",
+    #"smartgrid1": "smartgrid.SG1",
+    #"smartgrid2": "smartgrid.SG2",
+    #"smartgrid3": "smartgrid.SG3",
+    #"ysb": "ysb.YSB",
+    #"multiquery_ysb": "multiquery.ysb.YSB",
     "nexmark1": "nextmark.NE1",
     "nexmark2": "nextmark.NE2",
     "nexmark8": "nextmark.NE8"
@@ -71,7 +71,8 @@ def main():
     if not os.path.exists(flink):
         download_flink()
 
-    for parallelism in ["1", "2", "4", "8", "16"]:
+    #for parallelism in ["1", "2", "4", "8"]: #, "16"]:
+    for parallelism in ["8"]:
         for query_name, query_class in queries.items():
             prepare()
             run_flink_job(query_class, parallelism)

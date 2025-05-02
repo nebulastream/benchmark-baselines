@@ -92,7 +92,6 @@ public class NextmarkAuctionSource extends RichParallelSourceFunction<NEAuctionR
                         0,
                         mbuff.getLong(),
                         0, 0
-
                 );
                 ctx.collect(cm); // filtering is possible also here but it d not be idiomatic
             }

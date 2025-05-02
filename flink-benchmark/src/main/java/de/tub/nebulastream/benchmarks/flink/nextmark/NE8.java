@@ -50,10 +50,10 @@ public class NE8 {
 
         auctions.flatMap(new ThroughputLogger<NEAuctionRecord>(MESource.RECORD_SIZE_IN_BYTE, 10_000));
 
-        DataStreamSource<NEPersonRecord> persons = env.addSource(new NextmarkPersonSource(runtime, numOfRecords))
+        DataStreamSource<NEBidRecord> persons = env.addSource(new NextmarkBidSource(runtime, numOfRecords))
                 .setParallelism(parallelism);
 
-        persons.flatMap(new ThroughputLogger<NEPersonRecord>(MESource.RECORD_SIZE_IN_BYTE, 10_000));
+        persons.flatMap(new ThroughputLogger<NEBidRecord>(MESource.RECORD_SIZE_IN_BYTE, 10_000));
 
 
         auctions.join(persons).where(new KeySelector<NEAuctionRecord, Long>() {
@@ -61,15 +61,15 @@ public class NE8 {
                     public Long getKey(NEAuctionRecord value) throws Exception {
                         return value.seller;
                     }
-                }).equalTo(new KeySelector<NEPersonRecord, Long>() {
+                }).equalTo(new KeySelector<NEBidRecord, Long>() {
                     @Override
-                    public Long getKey(NEPersonRecord value) throws Exception {
+                    public Long getKey(NEBidRecord value) throws Exception {
                         return value.id;
                     }
-                }).window(TumblingProcessingTimeWindows.of(Time.hours(12))).apply(new FlatJoinFunction<NEAuctionRecord, NEPersonRecord, Tuple2<Long, Long>>() {
+                }).window(TumblingProcessingTimeWindows.of(Time.second(10))).apply(new FlatJoinFunction<NEAuctionRecord, NEBidRecord, Tuple2<Long, Long>>() {
                     @Override
-                    public void join(NEAuctionRecord first, NEPersonRecord second, Collector<Tuple2<Long, Long>> out) throws Exception {
-                        out.collect(new Tuple2<>(second.id, first.reserve));
+                    public void join(NEAuctionRecord first, NEBidRecord second, Collector<Tuple2<Long, Long>> out) throws Exception {
+                        out.collect(new Tuple2<>(first.id, second.auctionId));
                     }
                 })
                 .addSink(new SinkFunction<Tuple2<Long, Long>>() {

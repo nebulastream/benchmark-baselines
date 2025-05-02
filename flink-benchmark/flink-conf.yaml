@@ -51,7 +51,7 @@ jobmanager.bind-host: localhost
 #
 # Note this accounts for all memory usage within the JobManager process, including JVM metaspace and other overhead.
 
-jobmanager.memory.process.size: 1600m
+jobmanager.memory.process.size: 8196m
 
 # The host interface the TaskManager will bind to. By default, this is localhost, and will prevent
 # the TaskManager from communicating outside the machine/container it is running on.
@@ -75,6 +75,7 @@ taskmanager.bind-host: localhost
 
 taskmanager.host: localhost
 
+
 # The total process memory size for the TaskManager.
 #
 # Note this accounts for all memory usage within the TaskManager process, including JVM metaspace and other overhead.
@@ -88,7 +89,7 @@ taskmanager.memory.process.size: 20728m
 
 # The number of task slots that each TaskManager offers. Each slot runs one parallel pipeline.
 
-taskmanager.numberOfTaskSlots: 32
+taskmanager.numberOfTaskSlots: 16
 
 # The parallelism used for programs that did not specify and other parallelism.
 
@@ -246,9 +247,9 @@ rest.bind-address: localhost
 # no tuning. Adjusting them may be necessary in case of an "Insufficient number
 # of network buffers" error. The default min is 64MB, the default max is 1GB.
 # 
-# taskmanager.memory.network.fraction: 0.1
-# taskmanager.memory.network.min: 64mb
-# taskmanager.memory.network.max: 1gb
+#taskmanager.memory.network.fraction: 0.3
+#taskmanager.memory.network.min: 64mb
+#taskmanager.memory.network.max: 1gb
 
 #==============================================================================
 # Flink Cluster Security Configuration
@@ -306,3 +307,16 @@ rest.bind-address: localhost
 # Interval in milliseconds for refreshing the monitored directories.
 #historyserver.archive.fs.refresh-interval: 10000
 
+
+taskmanager.compute.numa: true
+env.java.opts: -XX:+TieredCompilation -server -XX:+UseG1GC -Dorg.apache.flink.shaded.netty4.io.netty.buffer.bytebuf.checkAccessible=false -Dorg.apache.flink.shaded.netty4.io.netty.leakDetection.level=DISABLED --add-opens=java.base/java.util=ALL-UNNAMED
+#jobmanager.heap.size: 8gb
+#taskmanager.heap.size: 32gb
+#taskmanager.memory.fraction: 0.5
+#taskmanager.memory.flink.size: 16gb
+#taskmanager.network.memory.fraction: 0.3
+#taskmanager.network.memory.min: 536870912
+#taskmanager.network.memory.max: 8589934592
+#taskmanager.memory.fraction: 0.5
+#jobmanager.heap.size: 8gb
+#taskmanager.heap.size: 64g

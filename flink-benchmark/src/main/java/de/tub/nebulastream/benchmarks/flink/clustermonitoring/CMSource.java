@@ -65,22 +65,21 @@ public class CMSource extends RichParallelSourceFunction<CMRecord> {
             // eventType
             mbuff.putShort(Short.parseShort(words.get(4)));
             // userId
-            mbuff.putShort(Short.parseShort(words.get(5)));
+            //mbuff.putShort(Short.parseShort(words.get(5)));
             // category
-            mbuff.putShort(Short.parseShort(words.get(6)));
+            mbuff.putShort(Short.parseShort(words.get(5)));
             // priority
-            mbuff.putShort(Short.parseShort(words.get(7)));
+            mbuff.putShort(Short.parseShort(words.get(6)));
             // cpu
-            mbuff.putFloat(Float.parseFloat(words.get(8)));
+            mbuff.putFloat(Float.parseFloat(words.get(7)));
             // ram
-            mbuff.putFloat(Float.parseFloat(words.get(9)));
+            mbuff.putFloat(Float.parseFloat(words.get(8)));
             // disk
-            mbuff.putFloat(Float.parseFloat(words.get(10)));
+            mbuff.putFloat(Float.parseFloat(words.get(9)));
             // constraints
-            mbuff.putShort(Short.parseShort(words.get(11)));
+            mbuff.putShort(Short.parseShort(words.get(10)));
             currentLineIndex++;
         }
-
     }
 
 
@@ -102,7 +101,7 @@ public class CMSource extends RichParallelSourceFunction<CMRecord> {
                         mbuff.getLong(),
                         mbuff.getShort(),
                         mbuff.getShort(),
-                        mbuff.getShort(),
+                        //mbuff.getShort(),
                         mbuff.getShort(),
                         mbuff.getFloat(),
                         mbuff.getFloat(),
