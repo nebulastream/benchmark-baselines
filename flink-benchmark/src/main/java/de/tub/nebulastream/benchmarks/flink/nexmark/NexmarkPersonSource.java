@@ -1,5 +1,5 @@
 
-package de.tub.nebulastream.benchmarks.flink.nextmark;
+package de.tub.nebulastream.benchmarks.flink.nexmark;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class NextmarkPersonSource extends RichParallelSourceFunction<NEPersonRecord> {
+public class NexmarkPersonSource extends RichParallelSourceFunction<NEPersonRecord> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(NextmarkPersonSource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NexmarkPersonSource.class);
     public static final int RECORD_SIZE_IN_BYTE = 40;
 
     private volatile boolean running = true;
@@ -24,7 +24,7 @@ public class NextmarkPersonSource extends RichParallelSourceFunction<NEPersonRec
     private long minAuctionId;
     private long minPersonId;
 
-    public NextmarkPersonSource(int runtime, int numOfRecords) {
+    public NexmarkPersonSource(int runtime, int numOfRecords) {
         this.numOfRecords = numOfRecords;
         this.runtime = runtime;
     }

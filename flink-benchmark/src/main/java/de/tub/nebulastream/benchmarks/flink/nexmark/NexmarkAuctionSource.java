@@ -1,5 +1,5 @@
 
-package de.tub.nebulastream.benchmarks.flink.nextmark;
+package de.tub.nebulastream.benchmarks.flink.nexmark;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.FileReader;
 
-public class NextmarkAuctionSource extends RichParallelSourceFunction<NEAuctionRecord> {
+public class NexmarkAuctionSource extends RichParallelSourceFunction<NEAuctionRecord> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(NextmarkAuctionSource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NexmarkAuctionSource.class);
     public static final int RECORD_SIZE_IN_BYTE = 36;
 
     private volatile boolean running = true;
@@ -21,7 +21,7 @@ public class NextmarkAuctionSource extends RichParallelSourceFunction<NEAuctionR
 
     String fileName = "./nes-datasets/auction_modified_a4a6f973820d43ca27c8d92fc58e1091.csv";
 
-    public NextmarkAuctionSource(int runtime, int numOfRecords) {
+    public NexmarkAuctionSource(int runtime, int numOfRecords) {
         this.numOfRecords = numOfRecords;
         this.runtime = runtime;
     }

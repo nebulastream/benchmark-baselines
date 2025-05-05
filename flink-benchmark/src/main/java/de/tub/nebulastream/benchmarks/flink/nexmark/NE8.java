@@ -1,4 +1,4 @@
-package de.tub.nebulastream.benchmarks.flink.nextmark;
+package de.tub.nebulastream.benchmarks.flink.nexmark;
 
 import de.tub.nebulastream.benchmarks.flink.utils.ThroughputLogger;
 import org.apache.flink.api.common.functions.FilterFunction;
@@ -43,15 +43,15 @@ public class NE8 {
         env.setMaxParallelism(maxParallelism);
         env.getConfig().setLatencyTrackingInterval(latencyTrackingInterval);
 
-        DataStreamSource<NEAuctionRecord> auctions = env.addSource(new NextmarkAuctionSource(runtime, numOfRecords))
+        DataStreamSource<NEAuctionRecord> auctions = env.addSource(new NexmarkAuctionSource(runtime, numOfRecords))
                 .setParallelism(parallelism);
 
-        auctions.flatMap(new ThroughputLogger<NEAuctionRecord>(NextmarkAuctionSource.RECORD_SIZE_IN_BYTE, 10_000));
+        auctions.flatMap(new ThroughputLogger<NEAuctionRecord>(NexmarkAuctionSource.RECORD_SIZE_IN_BYTE, 10_000));
 
-        DataStreamSource<NEBidRecord> persons = env.addSource(new NextmarkBidSource(runtime, numOfRecords))
+        DataStreamSource<NEBidRecord> persons = env.addSource(new NexmarkBidSource(runtime, numOfRecords))
                 .setParallelism(parallelism);
 
-        persons.flatMap(new ThroughputLogger<NEBidRecord>(NextmarkBidSource.RECORD_SIZE_IN_BYTE, 10_000));
+        persons.flatMap(new ThroughputLogger<NEBidRecord>(NexmarkBidSource.RECORD_SIZE_IN_BYTE, 10_000));
 
 
         auctions.join(persons).where(new KeySelector<NEAuctionRecord, Integer>() {

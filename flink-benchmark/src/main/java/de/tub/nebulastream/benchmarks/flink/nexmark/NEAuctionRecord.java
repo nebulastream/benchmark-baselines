@@ -1,4 +1,4 @@
-package de.tub.nebulastream.benchmarks.flink.nextmark;
+package de.tub.nebulastream.benchmarks.flink.nexmark;
 
 public class NEAuctionRecord {
 
