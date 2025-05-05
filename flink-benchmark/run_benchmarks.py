@@ -1,6 +1,7 @@
 import os
 import subprocess
 import argparse
+import csv
 
 parser = argparse.ArgumentParser(description="Script for running Flink benchmarks")
 parser.add_argument("--flink_version", default="1.20.1", help="Flink version to download (default: 1.20.1)")
@@ -10,21 +11,28 @@ flink = "flink-1.20.1"
 jar_path = os.path.join("target", "yahoo-bench-flink_2.11-0.1-SNAPSHOT.jar")
 
 queries = {
-    #"clustermonitoring1": "clustermonitoring.CM1",
-    #"clustermonitoring2": "clustermonitoring.CM2",
+    "clustermonitoring1": "clustermonitoring.CM1",
+    "clustermonitoring2": "clustermonitoring.CM2",
     #"linearroadbenchmark1": "linearroad.LR1",
     #"linearroadbenchmark2": "linearroad.LR2",
     #"manufacturingequipment1": "manufacturingequipment.ME1",
     #"smartgrid1": "smartgrid.SG1",
     #"smartgrid2": "smartgrid.SG2",
     #"smartgrid3": "smartgrid.SG3",
-    #"ysb": "ysb.YSB",
+    "ysb": "ysb.YSB",
     #"multiquery_ysb": "multiquery.ysb.YSB",
     "nexmark1": "nextmark.NE1",
     "nexmark2": "nextmark.NE2",
     "nexmark8": "nextmark.NE8"
 }
 
+csv_path = os.path.join("results", "all_queries.csv")
+
+csv_fieldnames = [
+    "query",
+    "parallelism",
+    "throughput"
+]
 
 def download_flink():
     flink_url = f"https://dlcdn.apache.org/flink/{flink}/{flink}-bin-scala_2.12.tgz"
@@ -34,8 +42,6 @@ def download_flink():
 
 
 def prepare():
-    # Run Maven
-    subprocess.run(["mvn", "package"], check=True)
     # Set config file
     subprocess.run(["cp", "flink-conf.yaml", os.path.join(flink, "conf")], check=True)
     # CLeanup log files
@@ -64,6 +70,25 @@ def analyze_logs(query_name, parallelism):
     subprocess.run(["java", "-cp", jar_path, "de.tub.nebulastream.benchmarks.flink.utils.AnalyzeTool", log_file, query_name, parallelism], check=True)
 
 
+def write_to_csv(query_name):
+    input_path = os.path.join(f"{query_name}.csv")
+
+    # Write results to csv
+    with open(csv_path, "a", newline="") as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=csv_fieldnames)
+        with open(input_path) as input_file:
+            csv_reader = csv.reader(input_file)
+            for row in csv_reader:
+                writer.writerow({
+                    "query": query_name, # same as row[0]
+                    "parallelism": row[1],
+                    "throughput": row[2]
+                })
+
+    # Remove the input csv file
+    os.remove(input_path)
+
+
 def main():
     global flink_version
     flink_version = f"flink-{args.flink_version}"
@@ -71,12 +96,25 @@ def main():
     if not os.path.exists(flink):
         download_flink()
 
+    if not os.path.exists("results"):
+        os.makedirs("results")
+
+    # Prepare csv file
+    with open(csv_path, "w", newline="") as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=csv_fieldnames)
+        writer.writeheader()
+
+    # Run Maven once
+    subprocess.run(["mvn", "package"], check=True)
+
     #for parallelism in ["1", "2", "4", "8"]: #, "16"]:
     for parallelism in ["8"]:
         for query_name, query_class in queries.items():
             prepare()
             run_flink_job(query_class, parallelism)
             analyze_logs(query_name, parallelism)
+            write_to_csv(query_name)
+
 
 if __name__ == "__main__":
     main()
