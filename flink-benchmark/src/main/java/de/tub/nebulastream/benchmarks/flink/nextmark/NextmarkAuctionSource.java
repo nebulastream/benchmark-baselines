@@ -6,23 +6,20 @@ import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunctio
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
-import java.util.concurrent.ThreadLocalRandom;
+import java.io.BufferedReader;
+import java.io.FileReader;
 
 public class NextmarkAuctionSource extends RichParallelSourceFunction<NEAuctionRecord> {
 
     private static final Logger LOG = LoggerFactory.getLogger(NextmarkAuctionSource.class);
-    public static final int RECORD_SIZE_IN_BYTE = 40;
+    public static final int RECORD_SIZE_IN_BYTE = 36;
 
     private volatile boolean running = true;
 
     private final int numOfRecords;
     private final int runtime;
 
-    private transient ByteBuffer mbuff;
-
-    private long minAuctionId;
-    private long minPersonId;
+    String fileName = "./nes-datasets/auction_modified_a4a6f973820d43ca27c8d92fc58e1091.csv";
 
     public NextmarkAuctionSource(int runtime, int numOfRecords) {
         this.numOfRecords = numOfRecords;
@@ -32,43 +29,6 @@ public class NextmarkAuctionSource extends RichParallelSourceFunction<NEAuctionR
     @Override
     public void open(Configuration parameters) throws Exception {
         super.open(parameters);
-        minAuctionId = NexmarkCommon.START_ID_AUCTION[getRuntimeContext().getIndexOfThisSubtask()];
-        minPersonId = NexmarkCommon.START_ID_PERSON[getRuntimeContext().getIndexOfThisSubtask()];
-        ThreadLocalRandom r = ThreadLocalRandom.current();
-        mbuff = ByteBuffer.allocate(16 * numOfRecords);
-        int currentLineIndex = 0;
-        for (int eventId = 0; eventId < numOfRecords; eventId++) {
-            long epoch = eventId / NexmarkCommon.TOTAL_EVENT_RATIO;
-            long offset = eventId % NexmarkCommon.TOTAL_EVENT_RATIO;
-            if (offset < NexmarkCommon.PERSON_EVENT_RATIO) {
-                epoch--;
-                offset = NexmarkCommon.AUCTION_EVENT_RATIO - 1;
-            } else {
-                offset = NexmarkCommon.AUCTION_EVENT_RATIO - 1;
-            }
-            long auctionId = minAuctionId + epoch * NexmarkCommon.AUCTION_EVENT_RATIO + offset;//r.nextLong(minAuctionId, maxAuctionId);
-
-            epoch = eventId / NexmarkCommon.TOTAL_EVENT_RATIO;
-            offset = eventId % NexmarkCommon.TOTAL_EVENT_RATIO;
-
-            if (offset >= NexmarkCommon.PERSON_EVENT_RATIO) {
-                offset = NexmarkCommon.PERSON_EVENT_RATIO - 1;
-            }
-            long matchingPerson;
-            if (r.nextInt(100) > 85) {
-                long personId = epoch * NexmarkCommon.PERSON_EVENT_RATIO + offset;
-                matchingPerson = minPersonId + (personId / NexmarkCommon.HOT_SELLER_RATIO) * NexmarkCommon.HOT_SELLER_RATIO;
-            } else {
-                long personId = epoch * NexmarkCommon.PERSON_EVENT_RATIO + offset + 1;
-                long activePersons = Math.min(personId, 20_000);
-                long n = r.nextLong(activePersons + 100);
-                matchingPerson = minPersonId + personId + activePersons - n;
-            }
-            mbuff.putLong(Math.abs(auctionId));
-            mbuff.putLong(Math.abs(matchingPerson));
-
-        }
-
     }
 
 
@@ -81,20 +41,38 @@ public class NextmarkAuctionSource extends RichParallelSourceFunction<NEAuctionR
         long sourceStartTs = System.currentTimeMillis();
         while (sourceStartTs + (runtime * 1000) > System.currentTimeMillis()) {
             long emitStartTime = System.currentTimeMillis();
-            mbuff.position(0);
-            for (int i = 0; i < numOfRecords; i++) {
-                NEAuctionRecord cm = new NEAuctionRecord(
-                        mbuff.getLong(),
-                        new char[16],
-                        new char[16],
-                        0,
-                        0,
-                        0,
-                        mbuff.getLong(),
-                        0, 0
-                );
-                ctx.collect(cm); // filtering is possible also here but it d not be idiomatic
+
+            int totalLines = 0;
+            // Read until numOfRecords is reached
+            while (totalLines < numOfRecords) {
+                // Read directly from the file, one line at a time
+                int bufferSize = RECORD_SIZE_IN_BYTE + 10;
+                try (BufferedReader reader = new BufferedReader(new FileReader(fileName), bufferSize)) {
+                    String line;
+                    while ((line = reader.readLine()) != null && totalLines < numOfRecords) {
+                        String[] words = line.split("\\W+");
+                        NEAuctionRecord auction = new NEAuctionRecord(
+                            // timestamp
+                            Long.parseLong(words[0].trim()),
+                            // id
+                            Integer.parseInt(words[1].trim()),
+                            // initialBid
+                            Integer.parseInt(words[2].trim()),
+                            // reserve
+                            Integer.parseInt(words[3].trim()),
+                            // expires
+                            Long.parseLong(words[4].trim()),
+                            // seller
+                            Integer.parseInt(words[5].trim()),
+                            // category
+                            Integer.parseInt(words[6].trim())
+                        );
+                        ctx.collect(auction);
+                        totalLines++;
+                    }
+                }
             }
+
             // Sleep for the rest of timeslice if needed
             long emitTime = System.currentTimeMillis() - emitStartTime;
             if (emitTime < 100) {

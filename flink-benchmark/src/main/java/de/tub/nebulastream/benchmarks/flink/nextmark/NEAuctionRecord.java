@@ -2,28 +2,24 @@ package de.tub.nebulastream.benchmarks.flink.nextmark;
 
 public class NEAuctionRecord {
 
-    public long id;
-    public char[] itemName;
-    public char[] description;
-    public double initialBit;
-    public long reserve;
-    public long dateTime;
-    public long seller;
+    public long timestamp;
+    public int id;
+    public double initialBid;
+    public int reserve;
     public long expires;
-    public long category;
+    public int seller;
+    public int category;
 
     public NEAuctionRecord() {
     }
 
-    public NEAuctionRecord(long id, char[] itemName, char[] description, double initialBit, long reserve, long dateTime, long seller, long expires, long category) {
+    public NEAuctionRecord(long timestamp, int id, int initialBid, int reserve, long expires, int seller, int category) {
+        this.timestamp = timestamp;
         this.id = id;
-        this.itemName = itemName;
-        this.description = description;
-        this.initialBit = initialBit;
+        this.initialBid = initialBid;
         this.reserve = reserve;
-        this.dateTime = dateTime;
-        this.seller = seller;
         this.expires = expires;
+        this.seller = seller;
         this.category = category;
     }
 }

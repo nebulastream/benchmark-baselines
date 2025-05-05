@@ -1,9 +1,6 @@
 package de.tub.nebulastream.benchmarks.flink.clustermonitoring;
 
 import de.tub.nebulastream.benchmarks.flink.utils.ThroughputLogger;
-import de.tub.nebulastream.benchmarks.flink.ysb.YSB;
-import de.tub.nebulastream.benchmarks.flink.ysb.YSBRecord;
-import de.tub.nebulastream.benchmarks.flink.ysb.YSBSource;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -23,7 +20,7 @@ import java.util.stream.Stream;
 
 public class CM1 {
 
-    private static final Logger LOG = LoggerFactory.getLogger(YSB.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CM1.class);
 
     public static void main(String[] args) throws Exception {
 

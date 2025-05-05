@@ -11,24 +11,28 @@ public class YSBRecord implements Serializable {
     public  long user_id;
     public  long page_id;
     public  long campaign_id;
+    public  long ad_type;
     public  long event_type;
+    public  long current_ms;
     public  long ip;
     public  long d1;
     public  long d2;
+    public  int d3;
     public  int d4;
-    public  short d3;
 
     public YSBRecord() {}
-    public YSBRecord(long user_id, long page_id, long campaign_id, long event_type, long ip, long d1, long d2, int d4, short d3) {
+    public YSBRecord(long user_id, long page_id, long campaign_id, long ad_type, long event_type, long current_ms, long ip, long d1, long d2, int d3, int d4) {
         this.user_id = user_id;
         this.page_id = page_id;
         this.campaign_id = campaign_id;
+        this.ad_type = ad_type;
         this.event_type = event_type;
+        this.current_ms = current_ms;
         this.ip = ip;
         this.d1 = d1;
         this.d2 = d2;
-        this.d4 = d4;
         this.d3 = d3;
+        this.d4 = d4;
     }
 
     public static class YSBFinalRecord implements Serializable {
@@ -51,12 +55,14 @@ public class YSBRecord implements Serializable {
             output.writeLong(object.user_id);
             output.writeLong(object.page_id);
             output.writeLong(object.campaign_id);
+            output.writeLong(object.ad_type);
             output.writeLong(object.event_type);
+            output.writeLong(object.current_ms);
             output.writeLong(object.ip);
             output.writeLong(object.d1);
             output.writeLong(object.d2);
             output.writeInt(object.d3);
-            output.writeShort(object.d4);
+            output.writeInt(object.d4);
         }
 
         private static byte[] readBytes(Input input, int count) {
@@ -67,7 +73,10 @@ public class YSBRecord implements Serializable {
 
         @Override
         public YSBRecord read(Kryo kryo, Input input, Class<YSBRecord> type) {
-            return new YSBRecord(input.readLong(),
+            return new YSBRecord(
+                    input.readLong(),
+                    input.readLong(),
+                    input.readLong(),
                     input.readLong(),
                     input.readLong(),
                     input.readLong(),
@@ -75,7 +84,7 @@ public class YSBRecord implements Serializable {
                     input.readLong(),
                     input.readLong(),
                     input.readInt(),
-                    input.readShort());
+                    input.readInt());
         }
     }
 

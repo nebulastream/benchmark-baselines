@@ -1,9 +1,6 @@
 package de.tub.nebulastream.benchmarks.flink.nextmark;
 
-import de.tub.nebulastream.benchmarks.flink.manufacturingequipment.MERecord;
-import de.tub.nebulastream.benchmarks.flink.manufacturingequipment.MESource;
 import de.tub.nebulastream.benchmarks.flink.utils.ThroughputLogger;
-import de.tub.nebulastream.benchmarks.flink.ysb.YSB;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple4;
@@ -20,7 +17,7 @@ import org.slf4j.LoggerFactory;
 
 public class NE1 {
 
-    private static final Logger LOG = LoggerFactory.getLogger(YSB.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NE1.class);
 
     /**
      * SELECT itemid, DOLTOEUR(price),
@@ -48,13 +45,13 @@ public class NE1 {
         DataStreamSource<NEBidRecord> source = env.addSource(new NextmarkBidSource(runtime, numOfRecords))
                 .setParallelism(parallelism);
 
-        source.flatMap(new ThroughputLogger<NEBidRecord>(MESource.RECORD_SIZE_IN_BYTE, 1_000_000));
+        source.flatMap(new ThroughputLogger<NEBidRecord>(NextmarkBidSource.RECORD_SIZE_IN_BYTE, 1_000_000));
 
         source
-                .map(new MapFunction<NEBidRecord, Tuple4<Long, Double, Long, Long>>() {
+                .map(new MapFunction<NEBidRecord, Tuple4<Integer, Float, Integer, Integer>>() {
                     @Override
-                    public Tuple4<Long, Double, Long, Long> map(NEBidRecord record) throws Exception {
-                        return new Tuple4<>(record.auctionId, (record.price * 89 / 100), record.bidderId, record.auctionId);
+                    public Tuple4<Integer, Float, Integer, Integer> map(NEBidRecord record) throws Exception {
+                        return new Tuple4<>(record.auctionId, (record.price * 89 / 100), record.bidder, record.auctionId);
                     }
                 }).project(0, 2)
                 .addSink(new SinkFunction<Tuple>() {

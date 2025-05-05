@@ -1,8 +1,6 @@
 package de.tub.nebulastream.benchmarks.flink.nextmark;
 
-import de.tub.nebulastream.benchmarks.flink.manufacturingequipment.MESource;
 import de.tub.nebulastream.benchmarks.flink.utils.ThroughputLogger;
-import de.tub.nebulastream.benchmarks.flink.ysb.YSB;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -19,7 +17,7 @@ import org.slf4j.LoggerFactory;
 
 public class NE2 {
 
-    private static final Logger LOG = LoggerFactory.getLogger(YSB.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NE2.class);
 
     /**
      * SELECT itemid, DOLTOEUR(price),
@@ -47,7 +45,7 @@ public class NE2 {
         DataStreamSource<NEBidRecord> source = env.addSource(new NextmarkBidSource(runtime, numOfRecords))
                 .setParallelism(parallelism);
 
-        source.flatMap(new ThroughputLogger<NEBidRecord>(MESource.RECORD_SIZE_IN_BYTE, 1_000_000));
+        source.flatMap(new ThroughputLogger<NEBidRecord>(NextmarkBidSource.RECORD_SIZE_IN_BYTE, 1_000_000));
 
         source
                 .filter(new FilterFunction<NEBidRecord>() {
@@ -55,21 +53,21 @@ public class NE2 {
                     public boolean filter(NEBidRecord value) throws Exception {
                         return value.auctionId == 1007 || value.auctionId == 1020 || value.auctionId == 2001 || value.auctionId == 2019 || value.auctionId == 2087;
                     }
-                }).flatMap(new FlatMapFunction<NEBidRecord, Tuple2<Long, Double>>() {
+                }).flatMap(new FlatMapFunction<NEBidRecord, Tuple2<Integer, Float>>() {
                     @Override
-                    public void flatMap(NEBidRecord value, Collector<Tuple2<Long, Double>> out) throws Exception {
+                    public void flatMap(NEBidRecord value, Collector<Tuple2<Integer, Float>> out) throws Exception {
                         out.collect(new Tuple2<>(value.auctionId, value.price));
                     }
                 })
-                .addSink(new SinkFunction<Tuple2<Long, Double>>() {
+                .addSink(new SinkFunction<Tuple2<Integer, Float>>() {
                     @Override
-                    public void invoke(Tuple2<Long, Double> value) throws Exception {
+                    public void invoke(Tuple2<Integer, Float> value) throws Exception {
 
                     }
                 });
 
 
-        env.execute("NE1");
+        env.execute("NE2");
 
     }
 }

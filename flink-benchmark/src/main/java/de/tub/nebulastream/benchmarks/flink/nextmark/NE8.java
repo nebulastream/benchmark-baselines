@@ -1,8 +1,6 @@
 package de.tub.nebulastream.benchmarks.flink.nextmark;
 
-import de.tub.nebulastream.benchmarks.flink.manufacturingequipment.MESource;
 import de.tub.nebulastream.benchmarks.flink.utils.ThroughputLogger;
-import de.tub.nebulastream.benchmarks.flink.ysb.YSB;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatJoinFunction;
 import org.apache.flink.api.java.functions.KeySelector;
@@ -20,7 +18,7 @@ import org.slf4j.LoggerFactory;
 
 public class NE8 {
 
-    private static final Logger LOG = LoggerFactory.getLogger(YSB.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NE8.class);
 
     /**
      * SELECT Rstream(P.id, P.name, A.reserve)
@@ -48,39 +46,39 @@ public class NE8 {
         DataStreamSource<NEAuctionRecord> auctions = env.addSource(new NextmarkAuctionSource(runtime, numOfRecords))
                 .setParallelism(parallelism);
 
-        auctions.flatMap(new ThroughputLogger<NEAuctionRecord>(MESource.RECORD_SIZE_IN_BYTE, 10_000));
+        auctions.flatMap(new ThroughputLogger<NEAuctionRecord>(NextmarkAuctionSource.RECORD_SIZE_IN_BYTE, 10_000));
 
         DataStreamSource<NEBidRecord> persons = env.addSource(new NextmarkBidSource(runtime, numOfRecords))
                 .setParallelism(parallelism);
 
-        persons.flatMap(new ThroughputLogger<NEBidRecord>(MESource.RECORD_SIZE_IN_BYTE, 10_000));
+        persons.flatMap(new ThroughputLogger<NEBidRecord>(NextmarkBidSource.RECORD_SIZE_IN_BYTE, 10_000));
 
 
-        auctions.join(persons).where(new KeySelector<NEAuctionRecord, Long>() {
+        auctions.join(persons).where(new KeySelector<NEAuctionRecord, Integer>() {
                     @Override
-                    public Long getKey(NEAuctionRecord value) throws Exception {
+                    public Integer getKey(NEAuctionRecord value) throws Exception {
                         return value.seller;
                     }
-                }).equalTo(new KeySelector<NEBidRecord, Long>() {
+                }).equalTo(new KeySelector<NEBidRecord, Integer>() {
                     @Override
-                    public Long getKey(NEBidRecord value) throws Exception {
-                        return value.id;
+                    public Integer getKey(NEBidRecord value) throws Exception {
+                        return value.auctionId;
                     }
-                }).window(TumblingProcessingTimeWindows.of(Time.second(10))).apply(new FlatJoinFunction<NEAuctionRecord, NEBidRecord, Tuple2<Long, Long>>() {
+                }).window(TumblingProcessingTimeWindows.of(Time.seconds(10))).apply(new FlatJoinFunction<NEAuctionRecord, NEBidRecord, Tuple2<Integer, Integer>>() {
                     @Override
-                    public void join(NEAuctionRecord first, NEBidRecord second, Collector<Tuple2<Long, Long>> out) throws Exception {
+                    public void join(NEAuctionRecord first, NEBidRecord second, Collector<Tuple2<Integer, Integer>> out) throws Exception {
                         out.collect(new Tuple2<>(first.id, second.auctionId));
                     }
                 })
-                .addSink(new SinkFunction<Tuple2<Long, Long>>() {
+                .addSink(new SinkFunction<Tuple2<Integer, Integer>>() {
                     @Override
-                    public void invoke(Tuple2<Long, Long> value, Context context) throws Exception {
+                    public void invoke(Tuple2<Integer, Integer> value, Context context) throws Exception {
 
                     }
                 });
 
 
-        env.execute("NE1");
+        env.execute("NE8");
 
     }
 }
