@@ -11,26 +11,30 @@ flink = "flink-1.20.1"
 jar_path = os.path.join("target", "yahoo-bench-flink_2.11-0.1-SNAPSHOT.jar")
 
 queries = {
-    "clustermonitoring1": "clustermonitoring.CM1",
-    "clustermonitoring2": "clustermonitoring.CM2",
-    #"linearroadbenchmark1": "linearroad.LR1",
-    #"linearroadbenchmark2": "linearroad.LR2",
-    #"manufacturingequipment1": "manufacturingequipment.ME1",
-    #"smartgrid1": "smartgrid.SG1",
-    #"smartgrid2": "smartgrid.SG2",
-    #"smartgrid3": "smartgrid.SG3",
+    # "clustermonitoring1": "clustermonitoring.CM1",
+    # "clustermonitoring2": "clustermonitoring.CM2",
+    # "linearroadbenchmark1": "linearroad.LR1",
+    # "linearroadbenchmark2": "linearroad.LR2",
+    # "manufacturingequipment1": "manufacturingequipment.ME1",
+    # "smartgrid1": "smartgrid.SG1",
+    # "smartgrid2": "smartgrid.SG2",
+    # "smartgrid3": "smartgrid.SG3",
     "ysb": "ysb.YSB",
-    #"multiquery_ysb": "multiquery.ysb.YSB",
-    "nexmark1": "nextmark.NE1",
-    "nexmark2": "nextmark.NE2",
-    "nexmark8": "nextmark.NE8"
+    # "multiquery_ysb": "multiquery.ysb.YSB",
+    "nexmark1": "nexmark.NE1",
+    "nexmark2": "nexmark.NE2",
+    "nexmark5": "nexmark.NE5",
+    "nexmark8": "nexmark.NE8"
 }
+
+num_of_records = [10000, 1000000, 10000000]
 
 csv_path = os.path.join("results", "all_queries.csv")
 
 csv_fieldnames = [
     "query",
     "parallelism",
+    "numOfRecords",
     "throughput"
 ]
 
@@ -48,12 +52,12 @@ def prepare():
     subprocess.run(f"rm -rf {flink}/log/*", shell=True, check=True)
 
 
-def run_flink_job(query, parallelism):
+def run_flink_job(query, parallelism, num_records):
     # Start Flink cluster
     subprocess.run([os.path.join(flink, "bin", "start-cluster.sh")], check=True)
     # Start query
     print(f"Now running query {query} with {parallelism} threads.")
-    subprocess.run([os.path.join(flink, "bin", "flink"), "run", "--class", f"de.tub.nebulastream.benchmarks.flink.{query}", jar_path, "--parallelism", parallelism]) # continue even if it fails
+    subprocess.run([os.path.join(flink, "bin", "flink"), "run", "--class", f"de.tub.nebulastream.benchmarks.flink.{query}", jar_path, "--parallelism", parallelism, "--numOfRecords", f"{num_records}"]) # continue even if it fails
     # Stop Flink cluster
     subprocess.run([os.path.join(flink, "bin", "stop-cluster.sh")], check=True)
 
@@ -70,7 +74,7 @@ def analyze_logs(query_name, parallelism):
     subprocess.run(["java", "-cp", jar_path, "de.tub.nebulastream.benchmarks.flink.utils.AnalyzeTool", log_file, query_name, parallelism], check=True)
 
 
-def write_to_csv(query_name):
+def write_to_csv(query_name, num_records):
     input_path = os.path.join(f"{query_name}.csv")
 
     # Write results to csv
@@ -82,6 +86,7 @@ def write_to_csv(query_name):
                 writer.writerow({
                     "query": query_name, # same as row[0]
                     "parallelism": row[1],
+                    "numOfRecords": num_records,
                     "throughput": row[2]
                 })
 
@@ -90,8 +95,8 @@ def write_to_csv(query_name):
 
 
 def main():
-    global flink_version
-    flink_version = f"flink-{args.flink_version}"
+    global flink
+    flink = f"flink-{args.flink_version}"
 
     if not os.path.exists(flink):
         download_flink()
@@ -109,11 +114,12 @@ def main():
 
     #for parallelism in ["1", "2", "4", "8"]: #, "16"]:
     for parallelism in ["8"]:
-        for query_name, query_class in queries.items():
-            prepare()
-            run_flink_job(query_class, parallelism)
-            analyze_logs(query_name, parallelism)
-            write_to_csv(query_name)
+        for num_records in num_of_records:
+            for query_name, query_class in queries.items():
+                prepare()
+                run_flink_job(query_class, parallelism, num_records)
+                analyze_logs(query_name, parallelism)
+                write_to_csv(query_name, num_records)
 
 
 if __name__ == "__main__":
